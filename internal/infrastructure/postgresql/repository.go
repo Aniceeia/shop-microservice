@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"./internal/domain/model"
+	"shop-microservice/internal/domain/model"
 )
 
 //доработать n+1 в FindAll запросы и batch insert в saveItems
@@ -153,7 +153,7 @@ func (r *OrderRepository) savePayment(ctx context.Context, tx *sql.Tx, order *mo
 }
 
 func (r *OrderRepository) saveItems(ctx context.Context, tx *sql.Tx, order *model.Order) error {
-	// идемпотентно
+	//идемпотентность
 	_, err := tx.ExecContext(ctx, "DELETE FROM items WHERE order_uid = $1", order.OrderUID)
 	if err != nil {
 		return err
@@ -163,16 +163,19 @@ func (r *OrderRepository) saveItems(ctx context.Context, tx *sql.Tx, order *mode
 		return nil
 	}
 
-	// batch insert
-	valueStrings := make([]string, 0, len(order.Items))
-	valueArgs := make([]interface{}, 0, len(order.Items)*12)
+	stmt, err := tx.PrepareContext(ctx, `
+        INSERT INTO items (
+            order_uid, chrt_id, track_number, price, rid, name, 
+            sale, size, total_price, nm_id, brand, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
 
-	for i, item := range order.Items {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
-			i*12+1, i*12+2, i*12+3, i*12+4, i*12+5, i*12+6,
-			i*12+7, i*12+8, i*12+9, i*12+10, i*12+11, i*12+12))
-
-		valueArgs = append(valueArgs,
+	for _, item := range order.Items {
+		_, err := stmt.ExecContext(ctx,
 			order.OrderUID,
 			item.ChrtID,
 			item.TrackNumber,
@@ -186,17 +189,12 @@ func (r *OrderRepository) saveItems(ctx context.Context, tx *sql.Tx, order *mode
 			item.Brand,
 			item.Status,
 		)
+		if err != nil {
+			return err
+		}
 	}
 
-	query := fmt.Sprintf(`
-        INSERT INTO items (
-            order_uid, chrt_id, track_number, price, rid, name, 
-            sale, size, total_price, nm_id, brand, status
-        ) VALUES %s
-    `, strings.Join(valueStrings, ","))
-
-	_, err = tx.ExecContext(ctx, query, valueArgs...)
-	return err
+	return nil
 }
 
 // FindByID - finds orders by uid
@@ -313,12 +311,17 @@ func (r *OrderRepository) scanSingleItem(rows *sql.Rows) (model.Item, error) {
 }
 
 // FindAll - finds all orders
-func (r *OrderRepository) FindAll() ([]model.Order, error) {
+func (r *OrderRepository) FindAll() ([]*model.Order, error) {
 	orders, err := r.findAllOrders()
 	if err != nil {
 		return nil, fmt.Errorf("FindAll: %w", err)
 	}
-	return orders, nil
+	// Конвертируем []model.Order в []*model.Order
+	result := make([]*model.Order, len(orders))
+	for i := range orders {
+		result[i] = &orders[i]
+	}
+	return result, nil
 }
 
 func (r *OrderRepository) findAllOrders() ([]model.Order, error) {
@@ -360,6 +363,8 @@ func (r *OrderRepository) getItemsForOrders(orderUIDs []string) (map[string][]mo
 		placeholders[i] = fmt.Sprintf("$%d", i+1)
 		args[i] = uid
 	}
+	// Убедимся что запрос использует индекс
+	// EXPLAIN ANALYZE SELECT * FROM items WHERE order_uid IN (...);
 	// first query
 	query := fmt.Sprintf(`
         SELECT order_uid, chrt_id, track_number, price, rid, name, 

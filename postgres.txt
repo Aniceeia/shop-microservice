@@ -1,0 +1,7 @@
+# Запускаем сервис
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Создаем пользователя и БД
+sudo -u postgres psql -c "CREATE USER testuser WITH PASSWORD 'testpass';"
+sudo -u postgres psql -c "CREATE DATABASE testdb OWNER testuser;"

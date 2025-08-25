@@ -13,7 +13,7 @@ import (
 func RunMigrations(db *sql.DB) error {
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("could not create migration driver: %v", err)
+		return fmt.Errorf("could not create migration driver: %w", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
@@ -22,11 +22,11 @@ func RunMigrations(db *sql.DB) error {
 		driver,
 	)
 	if err != nil {
-		return fmt.Errorf("could not create migration instance: %v", err)
+		return fmt.Errorf("could not create migration instance: %w", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("could not run migrations: %v", err)
+		return fmt.Errorf("could not run migrations: %w", err)
 	}
 
 	log.Println("Migrations applied successfully")
