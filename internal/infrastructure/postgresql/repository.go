@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"./internal/domain/model"
 )
@@ -21,7 +22,7 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 // Save - saves order, delivery, payment, items
 func (r *OrderRepository) Save(order *model.Order) error {
 	fail := func(err error) error {
-		return fmt.Errorf("Save Order: %v", err)
+		return fmt.Errorf("Save Order: %w", err)
 	}
 
 	ctx := context.Background()
@@ -152,20 +153,26 @@ func (r *OrderRepository) savePayment(ctx context.Context, tx *sql.Tx, order *mo
 }
 
 func (r *OrderRepository) saveItems(ctx context.Context, tx *sql.Tx, order *model.Order) error {
+	// идемпотентно
 	_, err := tx.ExecContext(ctx, "DELETE FROM items WHERE order_uid = $1", order.OrderUID)
 	if err != nil {
 		return err
 	}
 
-	for _, item := range order.Items {
-		query := `
-            INSERT INTO items (
-                order_uid, chrt_id, track_number, price, rid, name, 
-                sale, size, total_price, nm_id, brand, status
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        `
+	if len(order.Items) == 0 {
+		return nil
+	}
 
-		_, err := tx.ExecContext(ctx, query,
+	// batch insert
+	valueStrings := make([]string, 0, len(order.Items))
+	valueArgs := make([]interface{}, 0, len(order.Items)*12)
+
+	for i, item := range order.Items {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+			i*12+1, i*12+2, i*12+3, i*12+4, i*12+5, i*12+6,
+			i*12+7, i*12+8, i*12+9, i*12+10, i*12+11, i*12+12))
+
+		valueArgs = append(valueArgs,
 			order.OrderUID,
 			item.ChrtID,
 			item.TrackNumber,
@@ -179,18 +186,24 @@ func (r *OrderRepository) saveItems(ctx context.Context, tx *sql.Tx, order *mode
 			item.Brand,
 			item.Status,
 		)
-		if err != nil {
-			return err
-		}
 	}
-	return nil
+
+	query := fmt.Sprintf(`
+        INSERT INTO items (
+            order_uid, chrt_id, track_number, price, rid, name, 
+            sale, size, total_price, nm_id, brand, status
+        ) VALUES %s
+    `, strings.Join(valueStrings, ","))
+
+	_, err = tx.ExecContext(ctx, query, valueArgs...)
+	return err
 }
 
 // FindByID - finds orders by uid
 func (r *OrderRepository) FindByID(uid string) (*model.Order, error) {
 	order, err := r.findOrderByID(uid)
 	if err != nil {
-		return nil, fmt.Errorf("Find By ID Order: %v", err)
+		return nil, fmt.Errorf("Find By ID Order: %w", err)
 	}
 
 	return order, nil
@@ -238,9 +251,9 @@ func (r *OrderRepository) queryOrderWithDeliveryAndPayment(uid string) (*model.O
 
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("order not found: %v", err)
+			return nil, fmt.Errorf("order not found: %w", err)
 		}
-		return nil, fmt.Errorf("failed to query order: %v", err)
+		return nil, fmt.Errorf("failed to query order: %w", err)
 	}
 
 	order.Delivery = delivery
@@ -257,7 +270,7 @@ func (r *OrderRepository) queryOrderItems(uid string) ([]model.Item, error) {
 
 	rows, err := r.db.Query(query, uid)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query items: %v", err)
+		return nil, fmt.Errorf("failed to query items: %w", err)
 	}
 	defer rows.Close()
 
@@ -275,13 +288,13 @@ func (r *OrderRepository) scanItems(rows *sql.Rows) ([]model.Item, error) {
 	for rows.Next() {
 		item, err := r.scanSingleItem(rows)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan item: %v", err)
+			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
 		items = append(items, item)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %v", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
 	return items, nil
@@ -303,25 +316,108 @@ func (r *OrderRepository) scanSingleItem(rows *sql.Rows) (model.Item, error) {
 func (r *OrderRepository) FindAll() ([]model.Order, error) {
 	orders, err := r.findAllOrders()
 	if err != nil {
-		return nil, fmt.Errorf("FindAll: %v", err)
+		return nil, fmt.Errorf("FindAll: %w", err)
 	}
 	return orders, nil
 }
 
 func (r *OrderRepository) findAllOrders() ([]model.Order, error) {
+	orders, err := r.getOrdersWithDeliveryAndPayment()
+	if err != nil {
+		return nil, err
+	}
+
+	orderUIDs := extractOrderUIDs(orders)
+
+	itemsByOrder, err := r.getItemsForOrders(orderUIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range orders {
+		orders[i].Items = itemsByOrder[orders[i].OrderUID]
+	}
+
+	return orders, nil
+}
+
+func extractOrderUIDs(orders []model.Order) []string {
+	uids := make([]string, len(orders))
+	for i, order := range orders {
+		uids[i] = order.OrderUID
+	}
+	return uids
+}
+
+func (r *OrderRepository) getItemsForOrders(orderUIDs []string) (map[string][]model.Item, error) {
+	if len(orderUIDs) == 0 {
+		return make(map[string][]model.Item), nil
+	}
+
+	placeholders := make([]string, len(orderUIDs))
+	args := make([]interface{}, len(orderUIDs))
+	for i, uid := range orderUIDs {
+		placeholders[i] = fmt.Sprintf("$%d", i+1)
+		args[i] = uid
+	}
+	// first query
+	query := fmt.Sprintf(`
+        SELECT order_uid, chrt_id, track_number, price, rid, name, 
+               sale, size, total_price, nm_id, brand, status
+        FROM items 
+        WHERE order_uid IN (%s)
+        ORDER BY order_uid
+    `, strings.Join(placeholders, ","))
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query items for orders: %w", err)
+	}
+	defer rows.Close()
+
+	itemsByOrder := make(map[string][]model.Item)
+	for rows.Next() {
+		var orderUID string
+		item := model.Item{}
+
+		err := rows.Scan(
+			&orderUID,
+			&item.ChrtID, &item.TrackNumber, &item.Price, &item.Rid, &item.Name,
+			&item.Sale, &item.Size, &item.TotalPrice, &item.NmID, &item.Brand, &item.Status,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan item: %w", err)
+		}
+
+		itemsByOrder[orderUID] = append(itemsByOrder[orderUID], item)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return itemsByOrder, nil
+}
+
+func (r *OrderRepository) getOrdersWithDeliveryAndPayment() ([]model.Order, error) {
+	//second query
 	rows, err := r.queryAllOrdersWithDeliveryAndPayment()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	orders, err := r.scanOrders(rows)
-	if err != nil {
-		return nil, err
+	var orders []model.Order
+	for rows.Next() {
+		order, err := r.scanOrderWithDeliveryAndPayment(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+		orders = append(orders, *order)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("rows iteration error: %v", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
 	return orders, nil
@@ -342,30 +438,9 @@ func (r *OrderRepository) queryAllOrdersWithDeliveryAndPayment() (*sql.Rows, err
 
 	rows, err := r.db.Query(query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query orders: %v", err)
+		return nil, fmt.Errorf("failed to query orders: %w", err)
 	}
 	return rows, nil
-}
-
-func (r *OrderRepository) scanOrders(rows *sql.Rows) ([]model.Order, error) {
-	var orders []model.Order
-
-	for rows.Next() {
-		order, err := r.scanOrderWithDeliveryAndPayment(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan order: %v", err)
-		}
-
-		items, err := r.findItemsForOrder(order.OrderUID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get items for order %s: %v", order.OrderUID, err)
-		}
-
-		order.Items = items
-		orders = append(orders, *order)
-	}
-
-	return orders, nil
 }
 
 func (r *OrderRepository) scanOrderWithDeliveryAndPayment(rows *sql.Rows) (*model.Order, error) {
@@ -389,36 +464,4 @@ func (r *OrderRepository) scanOrderWithDeliveryAndPayment(rows *sql.Rows) (*mode
 	order.Payment = payment
 
 	return &order, nil
-}
-
-func (r *OrderRepository) findItemsForOrder(orderUID string) ([]model.Item, error) {
-	rows, err := r.queryItemsForOrder(orderUID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	items, err := r.scanItems(rows)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("items rows iteration error: %v", err)
-	}
-
-	return items, nil
-}
-
-func (r *OrderRepository) queryItemsForOrder(orderUID string) (*sql.Rows, error) {
-	query := `
-        SELECT chrt_id, track_number, price, rid, name, sale, size, total_price, nm_id, brand, status 
-        FROM items WHERE order_uid = $1
-    `
-
-	rows, err := r.db.Query(query, orderUID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query items for order %s: %v", orderUID, err)
-	}
-	return rows, nil
 }
