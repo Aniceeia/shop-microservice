@@ -1,15 +1,25 @@
-FROM golang:1.24-alpine as builder
+FROM golang:1.24-alpine
+
 WORKDIR /app
+
+# Копируем файлы зависимостей
 COPY go.mod go.sum ./
 RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o shop ./cmd/main.go
 
-FROM scratch
-COPY --from=builder /app/shop /
-USER 1001:1001
+# Копируем исходный код
+COPY . .
+
+# Собираем приложение
+RUN go build -o main ./cmd/main.go
+
+# Копируем миграции
+COPY migrations ./migrations
+
+# Открываем порт
 EXPOSE 8081
-CMD ["/shop"]
+
+# Запускаем приложение
+CMD ["./main"]
 #ускоряем через следующее выражение : 
 # ENV GOCACHE=/root/.cache/go-build
 # RUN --mount=type=cache,target="/root/.cache/go-build" CGO_ENABLE=0 GOOS=linux

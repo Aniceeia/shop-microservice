@@ -13,7 +13,7 @@ import (
 
 const (
 	host     = "localhost"
-	port     = 5432
+	port     = 5433
 	user     = "your_user"
 	password = "your_password"
 	dbname   = "orders_db"

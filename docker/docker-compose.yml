@@ -1,15 +1,32 @@
 version: '3.8'
+
 services:
+  app:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=postgres  # Важно: для Docker используем имя сервиса
+      - DB_PORT=5432      # Внутри Docker сети порт 5432
+      - DB_USER=orders_user
+      - DB_PASSWORD=orders_pass
+      - DB_NAME=orders_db
+      - APP_PORT=8081
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
   postgres:
     image: postgres:13
     environment:
-      POSTGRES_DB: testdb
-      POSTGRES_USER: testuser
-      POSTGRES_PASSWORD: testpass
+      - POSTGRES_USER=orders_user
+      - POSTGRES_PASSWORD=orders_pass
+      - POSTGRES_DB=orders_db
     ports:
-      - "5433:5432"  # Используем другой порт чтобы не конфликтовать с локальным PostgreSQL
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U testuser -d testdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - "5433:5432"  # Хост:5433 -> Контейнер:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
