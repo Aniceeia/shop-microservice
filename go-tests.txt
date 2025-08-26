@@ -1,0 +1,11 @@
+go tooling сам находит тесты, 
+
+// Хорошо:
+repository.go
+repository_test.go
+
+// Плохо:
+repository.go
+tests/repository_test.go
+
+- разделить unit и ibtegration тесты

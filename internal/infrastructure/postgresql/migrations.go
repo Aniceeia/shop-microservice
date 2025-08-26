@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -16,11 +18,19 @@ func RunMigrations(db *sql.DB) error {
 		return fmt.Errorf("could not create migration driver: %w", err)
 	}
 
+	projectRoot, err := getProjectRoot()
+	if err != nil {
+		return fmt.Errorf("could not get project root: %w", err)
+	}
+
+	migrationsPath := fmt.Sprintf("file://%s/migrations", projectRoot)
+
 	m, err := migrate.NewWithDatabaseInstance(
-		"file://migrations",
+		migrationsPath,
 		"postgres",
 		driver,
 	)
+
 	if err != nil {
 		return fmt.Errorf("could not create migration instance: %w", err)
 	}
@@ -31,4 +41,28 @@ func RunMigrations(db *sql.DB) error {
 
 	log.Println("Migrations applied successfully")
 	return nil
+}
+
+func getProjectRoot() (string, error) {
+	// Получаем текущую директорию (где находится migrations.go)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
+	// Поднимаемся на 3 уровня вверх: internal/infrastructure/postgresql -> корень проекта
+	projectRoot := filepath.Join(currentDir, "..", "..", "..")
+
+	absPath, err := filepath.Abs(projectRoot)
+	if err != nil {
+		return "", err
+	}
+
+	// Проверяем существование директории migrations
+	migrationsDir := filepath.Join(absPath, "migrations")
+	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
+		return "", fmt.Errorf("migrations directory not found: %s", migrationsDir)
+	}
+
+	return absPath, nil
 }

@@ -5,24 +5,37 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"shop-microservice/internal/api"
 	"shop-microservice/internal/infrastructure/postgresql"
+	"strconv"
 
 	_ "github.com/lib/pq"
 )
 
-const (
-	host     = "localhost"
-	port     = 5433
-	user     = "your_user"
-	password = "your_password"
-	dbname   = "orders_db"
-)
-
 func main() {
+	// Получаем переменные окружения
+	dbHost := os.Getenv("DB_HOST")
+	dbPortStr := os.Getenv("DB_PORT")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	appPort := os.Getenv("APP_PORT")
+
+	// Проверяем обязательные переменные
+	if dbHost == "" || dbPortStr == "" || dbUser == "" || dbPassword == "" || dbName == "" {
+		log.Fatal("Missing required database environment variables")
+	}
+
+	// Конвертируем порт в число
+	dbPort, err := strconv.Atoi(dbPortStr)
+	if err != nil {
+		log.Fatal("Invalid DB_PORT:", err)
+	}
+
 	// Подключаемся к БД
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
+		dbHost, dbPort, dbUser, dbPassword, dbName)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
@@ -50,8 +63,11 @@ func main() {
 	router := api.SetupRouter(handler)
 
 	// Запускаем сервер
-	log.Println("Server starting on :8081")
-	if err := http.ListenAndServe(":8081", router); err != nil {
+	if appPort == "" {
+		appPort = "8081" // значение по умолчанию
+	}
+	log.Printf("Server starting on :%s", appPort)
+	if err := http.ListenAndServe(":"+appPort, router); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }

@@ -201,10 +201,14 @@ func (r *OrderRepository) saveItems(ctx context.Context, tx *sql.Tx, order *mode
 func (r *OrderRepository) FindByID(uid string) (*model.Order, error) {
 	order, err := r.findOrderByID(uid)
 	if err != nil {
-		return nil, fmt.Errorf("Find By ID Order: %w", err)
+		return nil, Errorf("Find By ID Order: %w", err)
 	}
 
 	return order, nil
+}
+
+func Errorf(format string, args ...interface{}) error {
+	return fmt.Errorf(format, args...)
 }
 
 func (r *OrderRepository) findOrderByID(uid string) (*model.Order, error) {

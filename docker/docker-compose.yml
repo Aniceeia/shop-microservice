@@ -2,31 +2,35 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile 
     ports:
       - "8081:8081"
-    environment:
-      - DB_HOST=postgres  # Важно: для Docker используем имя сервиса
-      - DB_PORT=5432      # Внутри Docker сети порт 5432
-      - DB_USER=orders_user
-      - DB_PASSWORD=orders_pass
-      - DB_NAME=orders_db
-      - APP_PORT=8081
+    env_file:
+      - .env
+    volumes:
+      - ../migrations:/app/migrations 
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   postgres:
     image: postgres:13
-    environment:
-      - POSTGRES_USER=orders_user
-      - POSTGRES_PASSWORD=orders_pass
-      - POSTGRES_DB=orders_db
+    env_file:
+      - .env
     ports:
-      - "5433:5432"  # Хост:5433 -> Контейнер:5432
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orders_user -d orders_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     restart: unless-stopped
 
 volumes:
   postgres_data:
+    driver: local
