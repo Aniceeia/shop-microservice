@@ -6,22 +6,30 @@ services:
       context: ..
       dockerfile: docker/Dockerfile 
     ports:
-      - "8081:8081"
+      - "${APP_PORT}:${APP_PORT}"
+      - "9000:9000"  
     env_file:
       - .env
     volumes:
-      - ../migrations:/app/migrations 
+      - ../:/app  
+      - ../tmp:/app/tmp
+      - ../migrations:/app/migrations
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    command: air -c .air.toml
 
   postgres:
     image: postgres:13
     env_file:
-      - .env
+     - .env
+    environment:
+      POSTGRES_USER: ${DB_USER} 
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "5433:5432"
+      - "${DB_EXTERNAL_PORT}:${DB_INTERNAL_PORT}"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

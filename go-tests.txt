@@ -9,3 +9,66 @@ repository.go
 tests/repository_test.go
 
 - разделить unit и ibtegration тесты
+
+
+CURL:
+
+
+# В другом терминале
+curl -X POST http://localhost:8081/api/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_uid": "test123",
+    "track_number": "WBILMTESTTRACK",
+    "entry": "WBIL",
+    "locale": "en",
+    "customer_id": "test",
+    "delivery_service": "meest",
+    "shardkey": "9",
+    "sm_id": 99,
+    "oof_shard": "1",
+    "delivery": {
+      "name": "Test Testov",
+      "phone": "+9720000000",
+      "zip": "2639809",
+      "city": "Kiryat Mozkin",
+      "address": "Ploshad Mira 15",
+      "region": "Kraiot",
+      "email": "test@gmail.com"
+    },
+    "payment": {
+      "transaction": "test123",
+      "currency": "USD",
+      "provider": "wbpay",
+      "amount": 1817,
+      "payment_dt": 1637907727,
+      "bank": "alpha",
+      "delivery_cost": 1500,
+      "goods_total": 317,
+      "custom_fee": 0
+    },
+    "items": [
+      {
+        "chrt_id": 9934930,
+        "track_number": "WBILMTESTTRACK",
+        "price": 453,
+        "rid": "ab4219087a764ae0btest",
+        "name": "Mascaras",
+        "sale": 30,
+        "size": "0",
+        "total_price": 317,
+        "nm_id": 2389212,
+        "brand": "Vivienne Sabo",
+        "status": 202
+      }
+    ]
+  }'
+
+# Проверяем что сохранилось
+curl http://localhost:8081/api/orders/test123
+
+# Все заказы
+curl http://localhost:8081/api/orders
+
+# Health check
+curl http://localhost:8081/api/health

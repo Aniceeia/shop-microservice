@@ -44,25 +44,41 @@ func RunMigrations(db *sql.DB) error {
 }
 
 func getProjectRoot() (string, error) {
-	// Получаем текущую директорию (где находится migrations.go)
+	containerPaths := []string{
+		"/app",
+		"/migrations",
+	}
+
+	for _, path := range containerPaths {
+		migrationsDir := path
+		if path != "/migrations" {
+			migrationsDir = filepath.Join(path, "migrations")
+		}
+
+		if _, err := os.Stat(migrationsDir); err == nil {
+			if path == "/migrations" {
+				return "/", nil
+			}
+			return path, nil
+		}
+	}
+
 	currentDir, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
 
-	// Поднимаемся на 3 уровня вверх: internal/infrastructure/postgresql -> корень проекта
-	projectRoot := filepath.Join(currentDir, "..", "..", "..")
-
-	absPath, err := filepath.Abs(projectRoot)
-	if err != nil {
-		return "", err
+	possibleLocalPaths := []string{
+		currentDir,
+		filepath.Join(currentDir, "..", ".."),
 	}
 
-	// Проверяем существование директории migrations
-	migrationsDir := filepath.Join(absPath, "migrations")
-	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
-		return "", fmt.Errorf("migrations directory not found: %s", migrationsDir)
+	for _, path := range possibleLocalPaths {
+		migrationsDir := filepath.Join(path, "migrations")
+		if _, err := os.Stat(migrationsDir); err == nil {
+			return path, nil
+		}
 	}
 
-	return absPath, nil
+	return "", fmt.Errorf("migrations directory not found")
 }
