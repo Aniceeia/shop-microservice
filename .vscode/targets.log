@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed Aug 27 21:13:38 2025
+# Make data base, printed on Thu Aug 28 00:20:12 2025
 
 # Variables
 
@@ -57,7 +57,7 @@ VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Code/CachedData/2901c5ac6db8a986a5
 # environment
 LANG = C
 # environment
-XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.P3MQB3
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.4X9IB3
 # default
 .LOADED := 
 # default
@@ -99,7 +99,7 @@ XDG_SESSION_TYPE = wayland
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/1999,unix/daliatoo:/tmp/.ICE-unix/1999
+SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2005,unix/daliatoo:/tmp/.ICE-unix/2005
 # automatic
 *F = $(notdir $*)
 # environment
@@ -143,7 +143,9 @@ LC_MONETARY = en_CA.UTF-8
 # environment
 LC_TIME = en_CA.UTF-8
 # environment
-INVOCATION_ID = fcba6ca9bfc74d9ab6696c96f78c7e7b
+GOTELEMETRY_GOPLS_CLIENT_START_TIME = 1741773601
+# environment
+INVOCATION_ID = 739a97f5b49d4b1e8491da3c3b0dae38
 # environment
 USERNAME = nastya
 # environment
@@ -155,7 +157,7 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # automatic
 ?F = $(notdir $?)
 # environment
-DESKTOP_AUTOSTART_ID = 10d2a49d76802bf204175631840814329600000019990016
+DESKTOP_AUTOSTART_ID = 105b7f1d41a30d88e175632960150003600000020050016
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # automatic
@@ -169,11 +171,13 @@ GNUMAKEFLAGS :=
 # environment
 LOGNAME = nastya
 # environment
+GOTELEMETRY_GOPLS_CLIENT_TOKEN = 792
+# environment
 GIO_LAUNCHED_DESKTOP_FILE = /home/nastya/.config/autostart/code.desktop
 # makefile
 .DEFAULT_GOAL := up
 # environment
-SYSTEMD_EXEC_PID = 1999
+SYSTEMD_EXEC_PID = 2005
 # environment
 DISPLAY = :0
 # environment
@@ -183,7 +187,7 @@ GTK_MODULES = gail:atk-bridge
 # default
 MAKE_VERSION := 4.3
 # environment
-MANAGERPID = 1854
+MANAGERPID = 1861
 # environment
 LC_MEASUREMENT = en_CA.UTF-8
 # environment
@@ -195,7 +199,9 @@ LC_PAPER = en_CA.UTF-8
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-JOURNAL_STREAM = 8:17418
+JOURNAL_STREAM = 8:12919
+# environment
+GOMODCACHE = /home/nastya/goproject/pkg/mod
 # environment
 XDG_SESSION_CLASS = user
 # environment
@@ -210,6 +216,8 @@ VSCODE_IPC_HOOK = /run/user/1000/vscode-59bea211-1.10-main.sock
 IM_CONFIG_PHASE = 1
 # environment
 PAPERSIZE = letter
+# environment
+GOPROXY = https://proxy.golang.org,direct
 # default
 .RECIPEPREFIX := 
 # automatic
@@ -227,7 +235,7 @@ GDMSESSION = ubuntu
 # environment
 LC_IDENTIFICATION = en_CA.UTF-8
 # variable set hash-table stats:
-# Load=107/1024=10%, Rehash=0, Collisions=5/137=4%
+# Load=111/1024=11%, Rehash=0, Collisions=7/141=5%
 
 # Pattern-specific Variable Values
 
@@ -235,9 +243,9 @@ LC_IDENTIFICATION = en_CA.UTF-8
 
 # Directories
 
-# . (device 2050, inode 5642808): 23 files, no impossibilities.
+# . (device 2050, inode 5642808): 22 files, no impossibilities.
 
-# 23 files, no impossibilities in 1 directories.
+# 22 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -297,6 +305,7 @@ test-unit:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 38):
 	# Unit тесты (без зависимостей)
+ 
 	cd internal/infrastructure/postgresql && \
 	go test -v . -count=1
 
@@ -351,13 +360,12 @@ air-local:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 37 / storage = 325 B / avg = 8 B
- 
-# current buf: size = 8162 B / used = 325 B / count = 37 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 36 / storage = 318 B / avg = 8 B
+# current buf: size = 8162 B / used = 318 B / count = 36 / avg = 8 B
 
-# strcache performance: lookups = 53 / hit rate = 30%
+# strcache performance: lookups = 52 / hit rate = 30%
 # hash-table stats:
-# Load=37/8192=0%, Rehash=0, Collisions=0/53=0%
-# Finished Make data base on Wed Aug 27 21:13:38 2025
+# Load=36/8192=0%, Rehash=0, Collisions=0/52=0%
+# Finished Make data base on Thu Aug 28 00:20:12 2025
 
  

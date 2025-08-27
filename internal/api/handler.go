@@ -1,19 +1,26 @@
 package api
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"shop-microservice/internal/domain/model"
 	"shop-microservice/internal/domain/repositories"
+	"shop-microservice/internal/infrastructure/kafka"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Handler struct {
-	repo repositories.OrderRepository
+	repo     repositories.OrderRepository
+	producer *kafka.Producer
 }
 
-func NewHandler(repo repositories.OrderRepository) *Handler {
-	return &Handler{repo: repo}
+func NewHandler(repo repositories.OrderRepository, producer *kafka.Producer) *Handler {
+	return &Handler{
+		repo:     repo,
+		producer: producer,
+	}
 }
 
 // CreateOrder создает новый заказ
@@ -28,6 +35,17 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	if err := h.repo.Save(&order); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Отправляем сообщение в Kafka
+	if h.producer != nil {
+		go func() {
+			ctx := context.Background()
+			if err := h.producer.Produce(ctx, order.OrderUID, order); err != nil {
+				// Логируем ошибку, но не прерываем выполнение
+				log.Printf("Failed to produce message to Kafka: %v", err)
+			}
+		}()
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Order created successfully", "order_uid": order.OrderUID})

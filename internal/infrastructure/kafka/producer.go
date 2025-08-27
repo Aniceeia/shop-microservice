@@ -17,8 +17,8 @@ type Producer struct {
 }
 
 type ProducerConfig struct {
-	Brockers []string
-	Topic    string
+	Brokers []string
+	Topic   string
 }
 
 func NewProducer(cfg ProducerConfig) *Producer {

@@ -34,7 +34,7 @@ func main() {
 
 	kafkaBrokers := getEnv("KAFKA_BROKERS", "kafka:9092")
 	kafkaTopic := getEnv("KAFKA_TOPIC", "orders")
-	kafkaGroupID := getEnv("KAFKA_GROUP_ID", "orders-service")
+	//kafkaGroupID := getEnv("KAFKA_GROUP_ID", "orders-service")
 
 	// Проверяем обязательные переменные
 	if dbHost == "" || dbPortStr == "" || dbUser == "" || dbPassword == "" || dbName == "" {

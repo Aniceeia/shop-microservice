@@ -15,24 +15,24 @@ air-local:
 
 test:
 	docker-compose -f docker/docker-compose.yml up -d postgres && \
-	sleep 5 && \
+	sleep 10 && \
 	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env.test | xargs) go test -v . -count=1
+	DB_HOST=localhost DB_PORT=5433 DB_USER=orders_user DB_PASSWORD=orders_password DB_NAME=orders_db go test -v . -count=1
 
 test-coverage:
 	docker-compose -f docker/docker-compose.yml up -d postgres && \
 	sleep 5 && \
 	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env.test | xargs) go test -v . -coverprofile=coverage.out && \
+	env $$(cat ../../../../docker/.env | xargs) go test -v . -coverprofile=coverage.out && \
 	go tool cover -html=coverage.out
 
 test-integration:
 	# Запуск интеграционных тестов
-	env $$(cat docker/.env.test | xargs) \
+	env $$(cat docker/.env | xargs) \
 	docker-compose -f docker/docker-compose.yml up -d postgres && \
 	sleep 5 && \
 	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env.test | xargs) go test -tags=integration -v . -count=1
+	env $$(cat ../../../docker/.env | xargs) go test -tags=integration -v . -count=1
 
 test-unit:
 	# Unit тесты (без зависимостей)

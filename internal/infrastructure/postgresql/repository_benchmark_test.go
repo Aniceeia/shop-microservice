@@ -3,9 +3,7 @@ package postgresql
 import (
 	"database/sql"
 	"fmt"
-	"shop-microservice/internal/domain/model"
 	"testing"
-	"time"
 )
 
 func BenchmarkOrderRepository_Save(b *testing.B) {
@@ -93,54 +91,54 @@ func setupBenchmarkDB() *sql.DB {
 	return db
 }
 
-func createTestOrder() *model.Order {
-	return &model.Order{
-		OrderUID:          "test-order-uid",
-		TrackNumber:       "test-track",
-		Entry:             "test-entry",
-		Locale:            "en",
-		InternalSignature: "test-signature",
-		CustomerID:        "test-customer",
-		DeliveryService:   "test-service",
-		Shardkey:          "test-shard",
-		SmID:              1,
-		DateCreated:       time.Now(),
-		OofShard:          "test-oof",
-		Delivery: model.Delivery{
-			Name:    "John Doe",
-			Phone:   "+1234567890",
-			Zip:     "123456",
-			City:    "Moscow",
-			Address: "Street 1",
-			Region:  "Moscow",
-			Email:   "john@example.com",
-		},
-		Payment: model.Payment{
-			Transaction:  "test-transaction",
-			RequestID:    "test-request",
-			Currency:     "USD",
-			Provider:     "test-provider",
-			Amount:       1000,
-			PaymentDt:    time.Now().Unix(),
-			Bank:         "test-bank",
-			DeliveryCost: 500,
-			GoodsTotal:   500,
-			CustomFee:    0,
-		},
-		Items: []model.Item{
-			{
-				ChrtID:      1,
-				TrackNumber: "item-track-1",
-				Price:       100,
-				Rid:         "item-rid-1",
-				Name:        "Test Item 1",
-				Sale:        0,
-				Size:        "M",
-				TotalPrice:  100,
-				NmID:        123,
-				Brand:       "Test Brand",
-				Status:      1,
-			},
-		},
-	}
-}
+// func createTestOrder() *model.Order {
+// 	return &model.Order{
+// 		OrderUID:          "test-order-uid",
+// 		TrackNumber:       "test-track",
+// 		Entry:             "test-entry",
+// 		Locale:            "en",
+// 		InternalSignature: "test-signature",
+// 		CustomerID:        "test-customer",
+// 		DeliveryService:   "test-service",
+// 		Shardkey:          "test-shard",
+// 		SmID:              1,
+// 		DateCreated:       time.Now(),
+// 		OofShard:          "test-oof",
+// 		Delivery: model.Delivery{
+// 			Name:    "John Doe",
+// 			Phone:   "+1234567890",
+// 			Zip:     "123456",
+// 			City:    "Moscow",
+// 			Address: "Street 1",
+// 			Region:  "Moscow",
+// 			Email:   "john@example.com",
+// 		},
+// 		Payment: model.Payment{
+// 			Transaction:  "test-transaction",
+// 			RequestID:    "test-request",
+// 			Currency:     "USD",
+// 			Provider:     "test-provider",
+// 			Amount:       1000,
+// 			PaymentDt:    time.Now().Unix(),
+// 			Bank:         "test-bank",
+// 			DeliveryCost: 500,
+// 			GoodsTotal:   500,
+// 			CustomFee:    0,
+// 		},
+// 		Items: []model.Item{
+// 			{
+// 				ChrtID:      1,
+// 				TrackNumber: "item-track-1",
+// 				Price:       100,
+// 				Rid:         "item-rid-1",
+// 				Name:        "Test Item 1",
+// 				Sale:        0,
+// 				Size:        "M",
+// 				TotalPrice:  100,
+// 				NmID:        123,
+// 				Brand:       "Test Brand",
+// 				Status:      1,
+// 			},
+// 		},
+// 	}
+// }
