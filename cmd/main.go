@@ -13,14 +13,22 @@ import (
 	_ "github.com/lib/pq"
 )
 
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
+}
+
 func main() {
 	// Получаем переменные окружения
-	dbHost := os.Getenv("DB_HOST")
-	dbPortStr := os.Getenv("DB_PORT")
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	appPort := os.Getenv("APP_PORT")
+	dbHost := getEnv("DB_HOST", "postgres")
+	dbPortStr := getEnv("DB_PORT", "5432")
+	dbUser := getEnv("DB_USER", "orders_user")
+	dbPassword := getEnv("DB_PASSWORD", "orders_password")
+	dbName := getEnv("DB_NAME", "orders_db")
+	appPort := getEnv("APP_PORT", "8081")
 
 	// Проверяем обязательные переменные
 	if dbHost == "" || dbPortStr == "" || dbUser == "" || dbPassword == "" || dbName == "" {
