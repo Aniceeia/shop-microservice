@@ -7,8 +7,11 @@ import (
 	"net/http"
 	"os"
 	"shop-microservice/internal/api"
+	"shop-microservice/internal/infrastructure/kafka"
 	"shop-microservice/internal/infrastructure/postgresql"
 	"strconv"
+	"strings"
+	"time"
 
 	_ "github.com/lib/pq"
 )
@@ -22,13 +25,16 @@ func getEnv(key, defaultValue string) string {
 }
 
 func main() {
-	// Получаем переменные окружения
 	dbHost := getEnv("DB_HOST", "postgres")
 	dbPortStr := getEnv("DB_PORT", "5432")
 	dbUser := getEnv("DB_USER", "orders_user")
 	dbPassword := getEnv("DB_PASSWORD", "orders_password")
 	dbName := getEnv("DB_NAME", "orders_db")
 	appPort := getEnv("APP_PORT", "8081")
+
+	kafkaBrokers := getEnv("KAFKA_BROKERS", "kafka:9092")
+	kafkaTopic := getEnv("KAFKA_TOPIC", "orders")
+	kafkaGroupID := getEnv("KAFKA_GROUP_ID", "orders-service")
 
 	// Проверяем обязательные переменные
 	if dbHost == "" || dbPortStr == "" || dbUser == "" || dbPassword == "" || dbName == "" {
@@ -61,18 +67,38 @@ func main() {
 		log.Fatal("Migrations failed:", err)
 	}
 
+	// Инициализируем Kafka
+	brokers := strings.Split(kafkaBrokers, ",")
+	kafkaManager := kafka.NewKafkaManager(brokers)
+
+	// Ждем доступности Kafka
+	log.Println("Waiting for Kafka to be available...")
+	if err := kafkaManager.WaitForKafka(30 * time.Second); err != nil {
+		log.Fatal("Kafka not available:", err)
+	}
+
+	// Создаем топик если не существует
+	if err := kafkaManager.CreateTopicIfNotExists(kafkaTopic, 3, 1); err != nil {
+		log.Printf("Warning: failed to create topic: %v", err)
+	}
+
+	// Инициализируем Kafka producer
+	kafkaProducer := kafka.NewProducer(kafka.ProducerConfig{
+		Brokers: brokers,
+		Topic:   kafkaTopic,
+	})
+	defer kafkaProducer.Close()
+
 	// Инициализируем репозиторий
 	repo := postgresql.NewOrderRepository(db)
 
-	// Инициализируем handler
-	handler := api.NewHandler(repo)
+	// Инициализируем handler с Kafka producer
+	handler := api.NewHandler(repo, kafkaProducer)
 
-	// Настраиваем роутер
 	router := api.SetupRouter(handler)
 
-	// Запускаем сервер
 	if appPort == "" {
-		appPort = "8081" // значение по умолчанию
+		appPort = "8081"
 	}
 	log.Printf("Server starting on :%s", appPort)
 	if err := http.ListenAndServe(":"+appPort, router); err != nil {
