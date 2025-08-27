@@ -1,1 +1,1 @@
-{"buildTargets":["air-local","dev-down","dev-up","down","logs","test","test-coverage","test-integration","test-unit","up"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
+{"buildTargets":["air-local","down","logs","test","test-coverage","test-integration","test-unit","up"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
