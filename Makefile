@@ -38,3 +38,23 @@ test-unit:
 	# Unit тесты (без зависимостей)
 	cd internal/infrastructure/postgresql && \
 	go test -v . -count=1
+
+# Тесты Kafka
+test-kafka:
+	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
+	sleep 30 && \
+	cd internal/infrastructure/kafka && \
+	KAFKA_BROKERS=localhost:9093 go test -v . -count=1
+
+test-kafka-integration:
+	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
+	sleep 30 && \
+	cd internal/infrastructure/kafka && \
+	KAFKA_BROKERS=localhost:9093 go test -v -tags=integration . -count=1
+
+# Тест доступности Kafka
+test-kafka-health:
+	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
+	sleep 30 && \
+	docker exec docker-kafka-1 kafka-broker-api-versions --bootstrap-server localhost:9092 && \
+	echo "Kafka is healthy"
