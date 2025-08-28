@@ -1,19 +1,28 @@
- вот структура моего проекта:
+вот структура моего проекта:
 /home/nastya/Downloads/shop/shop-microservice/cmd/main.go
 /home/nastya/Downloads/shop/shop-microservice/docker/.env
+
 /home/nastya/Downloads/shop/shop-microservice/docker/docker-compose.yml
 /home/nastya/Downloads/shop/shop-microservice/docker/Dockerfile
+
 /home/nastya/Downloads/shop/shop-microservice/internal/api/handler.go
 /home/nastya/Downloads/shop/shop-microservice/internal/api/router.go
+
 /home/nastya/Downloads/shop/shop-microservice/internal/domain/model/entities.go
 /home/nastya/Downloads/shop/shop-microservice/internal/domain/repositories/order_repositories.go
+
 /home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/migrations.go
 /home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/repository_benchmark_test.go
 /home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/repository_integration_test.go
 /home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/repository_unit_test.go
 /home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/repository.go
 /home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/test_utils.go
+
 /home/nastya/Downloads/shop/shop-microservice/migrations/000001_init.down.sql
 /home/nastya/Downloads/shop/shop-microservice/migrations/000001_init.up.sql
 /home/nastya/Downloads/shop/shop-microservice/Makefile
+
+/home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/kafka/consumer.go
+/home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/postgresql/repository.go
+/home/nastya/Downloads/shop/shop-microservice/internal/infrastructure/kafka/manager.go
 

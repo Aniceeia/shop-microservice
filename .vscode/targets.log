@@ -1,6 +1,4 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
-make: *** No rule to make target 'all'.  Stop.
-
 # GNU Make 4.3
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2020 Free Software Foundation, Inc.
@@ -8,7 +6,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Aug 28 00:20:12 2025
+# Make data base, printed on Thu Aug 28 18:49:45 2025
 
 # Variables
 
@@ -20,6 +18,8 @@ LC_ALL = C
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
 SSH_AGENT_LAUNCHER = gnome-keyring
+# environment
+GJS_DEBUG_OUTPUT = stderr
 # environment
 LC_NAME = en_CA.UTF-8
 # environment
@@ -57,7 +57,7 @@ VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Code/CachedData/2901c5ac6db8a986a5
 # environment
 LANG = C
 # environment
-XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.4X9IB3
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.MNS5B3
 # default
 .LOADED := 
 # default
@@ -93,13 +93,13 @@ MAKEFILE_LIST := Makefile
 # automatic
 @F = $(notdir $@)
 # environment
-VSCODE_PID = 2289
+VSCODE_PID = 5112
 # environment
 XDG_SESSION_TYPE = wayland
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2005,unix/daliatoo:/tmp/.ICE-unix/2005
+SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/1992,unix/daliatoo:/tmp/.ICE-unix/1992
 # automatic
 *F = $(notdir $*)
 # environment
@@ -123,6 +123,8 @@ XMODIFIERS = @im=ibus
 # environment
 LD_LIBRARY_PATH = :/usr/local/lib
 # environment
+GJS_DEBUG_TOPICS = JS ERROR;JS LOG
+# environment
 SHLVL = 0
 # environment
 MAKELEVEL := 0
@@ -145,7 +147,7 @@ LC_TIME = en_CA.UTF-8
 # environment
 GOTELEMETRY_GOPLS_CLIENT_START_TIME = 1741773601
 # environment
-INVOCATION_ID = 739a97f5b49d4b1e8491da3c3b0dae38
+INVOCATION_ID = e90b69443cf845f6b3a393f2033a2152
 # environment
 USERNAME = nastya
 # environment
@@ -156,8 +158,6 @@ LC_TELEPHONE = en_CA.UTF-8
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # automatic
 ?F = $(notdir $?)
-# environment
-DESKTOP_AUTOSTART_ID = 105b7f1d41a30d88e175632960150003600000020050016
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # automatic
@@ -173,11 +173,11 @@ LOGNAME = nastya
 # environment
 GOTELEMETRY_GOPLS_CLIENT_TOKEN = 792
 # environment
-GIO_LAUNCHED_DESKTOP_FILE = /home/nastya/.config/autostart/code.desktop
+GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # makefile
 .DEFAULT_GOAL := up
 # environment
-SYSTEMD_EXEC_PID = 2005
+SYSTEMD_EXEC_PID = 2028
 # environment
 DISPLAY = :0
 # environment
@@ -187,11 +187,11 @@ GTK_MODULES = gail:atk-bridge
 # default
 MAKE_VERSION := 4.3
 # environment
-MANAGERPID = 1861
+MANAGERPID = 1847
 # environment
 LC_MEASUREMENT = en_CA.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2289
+GIO_LAUNCHED_DESKTOP_FILE_PID = 5112
 # environment
 _ = /usr/share/code/code
 # environment
@@ -199,7 +199,7 @@ LC_PAPER = en_CA.UTF-8
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-JOURNAL_STREAM = 8:12919
+JOURNAL_STREAM = 8:17781
 # environment
 GOMODCACHE = /home/nastya/goproject/pkg/mod
 # environment
@@ -235,7 +235,7 @@ GDMSESSION = ubuntu
 # environment
 LC_IDENTIFICATION = en_CA.UTF-8
 # variable set hash-table stats:
-# Load=111/1024=11%, Rehash=0, Collisions=7/141=5%
+# Load=112/1024=11%, Rehash=0, Collisions=7/142=5%
 
 # Pattern-specific Variable Values
 
@@ -243,9 +243,9 @@ LC_IDENTIFICATION = en_CA.UTF-8
 
 # Directories
 
-# . (device 2050, inode 5642808): 22 files, no impossibilities.
+# . (device 2050, inode 5642808): 23 files, no impossibilities.
 
-# 22 files, no impossibilities in 1 directories.
+# 23 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -261,7 +261,7 @@ test-coverage:
 	docker-compose -f docker/docker-compose.yml up -d postgres && \
 	sleep 5 && \
 	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env.test | xargs) go test -v . -coverprofile=coverage.out && \
+	env $$(cat ../../../../docker/.env | xargs) go test -v . -coverprofile=coverage.out && \
 	go tool cover -html=coverage.out
 
 test-integration:
@@ -271,16 +271,16 @@ test-integration:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 30):
 	# Запуск интеграционных тестов
-	env $$(cat docker/.env.test | xargs) \
+	env $$(cat docker/.env | xargs) \
 	docker-compose -f docker/docker-compose.yml up -d postgres && \
 	sleep 5 && \
 	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env.test | xargs) go test -tags=integration -v . -count=1
+	env $$(cat ../../../docker/.env | xargs) go test -tags=integration -v . -count=1
 
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2025-08-27 14:58:42.406994808
+#  Last modified 2025-08-28 01:31:58.905983454
 #  File has been updated.
 #  Successfully updated.
 
@@ -305,9 +305,11 @@ test-unit:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 38):
 	# Unit тесты (без зависимостей)
- 
 	cd internal/infrastructure/postgresql && \
 	go test -v . -count=1
+
+ 
+make: *** No rule to make target 'all'.  Stop.
 
 # Not a target:
 .DEFAULT:
@@ -329,9 +331,29 @@ test:
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 17):
 	docker-compose -f docker/docker-compose.yml up -d postgres && \
-	sleep 5 && \
+	sleep 10 && \
 	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env.test | xargs) go test -v . -count=1
+	DB_HOST=localhost DB_PORT=5433 DB_USER=orders_user DB_PASSWORD=orders_password DB_NAME=orders_db go test -v . -count=1
+
+test-kafka-integration:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 50):
+	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
+	sleep 30 && \
+	cd internal/infrastructure/kafka && \
+	KAFKA_BROKERS=localhost:9093 go test -v -tags=integration . -count=1
+
+test-kafka-health:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 57):
+	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
+	sleep 30 && \
+	docker exec docker-kafka-1 kafka-broker-api-versions --bootstrap-server localhost:9092 && \
+	echo "Kafka is healthy"
 
 .PHONY: test test-unit test-integration
 #  Implicit rule search has not been done.
@@ -345,6 +367,16 @@ down:
 #  recipe to execute (from 'Makefile', line 8):
 	docker-compose -f docker/docker-compose.yml down -v
 
+test-kafka:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 44):
+	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
+	sleep 30 && \
+	cd internal/infrastructure/kafka && \
+	KAFKA_BROKERS=localhost:9093 go test -v . -count=1
+
 air-local:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -353,19 +385,19 @@ air-local:
 	air -c .air.toml
 
 # files hash-table stats:
-# Load=13/1024=1%, Rehash=0, Collisions=0/29=0%
+# Load=16/1024=2%, Rehash=0, Collisions=0/32=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 36 / storage = 318 B / avg = 8 B
-# current buf: size = 8162 B / used = 318 B / count = 36 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 40 / storage = 377 B / avg = 9 B
+# current buf: size = 8162 B / used = 377 B / count = 40 / avg = 9 B
 
-# strcache performance: lookups = 52 / hit rate = 30%
+# strcache performance: lookups = 59 / hit rate = 32%
 # hash-table stats:
-# Load=36/8192=0%, Rehash=0, Collisions=0/52=0%
-# Finished Make data base on Thu Aug 28 00:20:12 2025
+# Load=40/8192=0%, Rehash=0, Collisions=0/59=0%
+# Finished Make data base on Thu Aug 28 18:49:45 2025
 
  

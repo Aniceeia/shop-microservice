@@ -1,10 +1,12 @@
 package postgresql
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"shop-microservice/internal/domain/model"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
@@ -19,11 +21,10 @@ func TestOrderRepository_Save_Unit(t *testing.T) {
 	repo := NewOrderRepository(db)
 
 	order := createTestOrder()
+	ctx := context.Background()
 
-	// Mock ожидания
 	mock.ExpectBegin()
 
-	// Mock для saveOrder
 	mock.ExpectExec("INSERT INTO orders").
 		WithArgs(
 			order.OrderUID, order.TrackNumber, order.Entry, order.Locale, order.InternalSignature,
@@ -31,7 +32,6 @@ func TestOrderRepository_Save_Unit(t *testing.T) {
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Mock для saveDelivery
 	mock.ExpectExec("INSERT INTO deliveries").
 		WithArgs(
 			order.OrderUID,
@@ -40,7 +40,6 @@ func TestOrderRepository_Save_Unit(t *testing.T) {
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Mock для savePayment
 	mock.ExpectExec("INSERT INTO payments").
 		WithArgs(
 			order.OrderUID,
@@ -50,10 +49,8 @@ func TestOrderRepository_Save_Unit(t *testing.T) {
 		).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-	// Mock для удаления старых items
 	mock.ExpectExec("DELETE FROM items WHERE order_uid = ?").WillReturnResult(sqlmock.NewResult(0, 0))
 
-	// Mock для вставки items
 	mock.ExpectPrepare("INSERT INTO items")
 	mock.ExpectExec("INSERT INTO items").
 		WithArgs(
@@ -66,11 +63,9 @@ func TestOrderRepository_Save_Unit(t *testing.T) {
 
 	mock.ExpectCommit()
 
-	// Выполняем тестируемый метод
-	err = repo.Save(order)
+	err = repo.Save(ctx, order)
 	require.NoError(t, err)
 
-	// Проверяем, что все ожидания выполнены
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -82,8 +77,8 @@ func TestOrderRepository_Save_TransactionRollbackOnError(t *testing.T) {
 	repo := NewOrderRepository(db)
 
 	order := createTestOrder()
+	ctx := context.Background()
 
-	// Mock ожидания с ошибкой при сохранении заказа
 	mock.ExpectBegin()
 	mock.ExpectExec("INSERT INTO orders").
 		WithArgs(
@@ -93,12 +88,10 @@ func TestOrderRepository_Save_TransactionRollbackOnError(t *testing.T) {
 		WillReturnError(errors.New("database error"))
 	mock.ExpectRollback()
 
-	// Выполняем тестируемый метод
-	err = repo.Save(order)
+	err = repo.Save(ctx, order)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "database error")
 
-	// Проверяем, что все ожидания выполнены
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -111,8 +104,8 @@ func TestOrderRepository_FindByID_Unit(t *testing.T) {
 
 	orderUID := "test-order-uid"
 	expectedOrder := createTestOrder()
+	ctx := context.Background()
 
-	// Mock для queryOrderWithDeliveryAndPayment
 	rows := sqlmock.NewRows([]string{
 		"order_uid", "track_number", "entry", "locale", "internal_signature",
 		"customer_id", "delivery_service", "shardkey", "sm_id", "date_created", "oof_shard",
@@ -131,7 +124,6 @@ func TestOrderRepository_FindByID_Unit(t *testing.T) {
 		WithArgs(orderUID).
 		WillReturnRows(rows)
 
-	// Mock для queryOrderItems
 	itemRows := sqlmock.NewRows([]string{
 		"chrt_id", "track_number", "price", "rid", "name", "sale", "size", "total_price", "nm_id", "brand", "status",
 	}).AddRow(
@@ -143,11 +135,9 @@ func TestOrderRepository_FindByID_Unit(t *testing.T) {
 		WithArgs(orderUID).
 		WillReturnRows(itemRows)
 
-	// Выполняем тестируемый метод
-	result, err := repo.FindByID(orderUID)
+	result, err := repo.FindByID(ctx, orderUID)
 	require.NoError(t, err)
 
-	// Проверяем результат
 	assert.Equal(t, expectedOrder.OrderUID, result.OrderUID)
 	assert.Equal(t, expectedOrder.TrackNumber, result.TrackNumber)
 	assert.Equal(t, expectedOrder.Delivery.Name, result.Delivery.Name)
@@ -155,7 +145,6 @@ func TestOrderRepository_FindByID_Unit(t *testing.T) {
 	require.Len(t, result.Items, 1)
 	assert.Equal(t, expectedOrder.Items[0].Name, result.Items[0].Name)
 
-	// Проверяем, что все ожидания выполнены
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -167,19 +156,17 @@ func TestOrderRepository_FindByID_NotFound(t *testing.T) {
 	repo := NewOrderRepository(db)
 
 	orderUID := "non-existent-id"
+	ctx := context.Background()
 
-	// Mock для queryOrderWithDeliveryAndPayment - возвращаем пустой результат
 	mock.ExpectQuery("SELECT o.order_uid").
 		WithArgs(orderUID).
 		WillReturnError(sql.ErrNoRows)
 
-	// Выполняем тестируемый метод
-	result, err := repo.FindByID(orderUID)
+	result, err := repo.FindByID(ctx, orderUID)
 	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "order not found")
 
-	// Проверяем, что все ожидания выполнены
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -191,8 +178,8 @@ func TestOrderRepository_FindAll_Unit(t *testing.T) {
 	repo := NewOrderRepository(db)
 
 	expectedOrder := createTestOrder()
+	ctx := context.Background()
 
-	// Mock для getOrdersWithDeliveryAndPayment
 	orderRows := sqlmock.NewRows([]string{
 		"order_uid", "track_number", "entry", "locale", "internal_signature",
 		"customer_id", "delivery_service", "shardkey", "sm_id", "date_created", "oof_shard",
@@ -210,7 +197,6 @@ func TestOrderRepository_FindAll_Unit(t *testing.T) {
 	mock.ExpectQuery("SELECT o.order_uid").
 		WillReturnRows(orderRows)
 
-	// Mock для getItemsForOrders
 	itemRows := sqlmock.NewRows([]string{
 		"order_uid", "chrt_id", "track_number", "price", "rid", "name", "sale", "size", "total_price", "nm_id", "brand", "status",
 	}).AddRow(
@@ -223,18 +209,15 @@ func TestOrderRepository_FindAll_Unit(t *testing.T) {
 		WithArgs(expectedOrder.OrderUID).
 		WillReturnRows(itemRows)
 
-	// Выполняем тестируемый метод
-	result, err := repo.FindAll()
+	result, err := repo.FindAll(ctx)
 	require.NoError(t, err)
 
-	// Проверяем результат
 	require.Len(t, result, 1)
 	assert.Equal(t, expectedOrder.OrderUID, result[0].OrderUID)
 	assert.Equal(t, expectedOrder.Delivery.Name, result[0].Delivery.Name)
 	require.Len(t, result[0].Items, 1)
 	assert.Equal(t, expectedOrder.Items[0].Name, result[0].Items[0].Name)
 
-	// Проверяем, что все ожидания выполнены
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -244,8 +227,8 @@ func TestOrderRepository_FindAll_NoOrders(t *testing.T) {
 	defer db.Close()
 
 	repo := NewOrderRepository(db)
+	ctx := context.Background()
 
-	// Mock для getOrdersWithDeliveryAndPayment - пустой результат
 	orderRows := sqlmock.NewRows([]string{
 		"order_uid", "track_number", "entry", "locale", "internal_signature",
 		"customer_id", "delivery_service", "shardkey", "sm_id", "date_created", "oof_shard",
@@ -257,14 +240,10 @@ func TestOrderRepository_FindAll_NoOrders(t *testing.T) {
 	mock.ExpectQuery("SELECT o.order_uid").
 		WillReturnRows(orderRows)
 
-	// getItemsForOrders не должен вызываться для пустого списка заказов
-
-	// Выполняем тестируемый метод
-	result, err := repo.FindAll()
+	result, err := repo.FindAll(ctx)
 	require.NoError(t, err)
 	assert.Empty(t, result)
 
-	// Проверяем, что все ожидания выполнены
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -279,6 +258,23 @@ func TestExtractOrderUIDs(t *testing.T) {
 	expected := []string{"order1", "order2", "order3"}
 
 	assert.Equal(t, expected, result)
+}
+
+func TestOrderRepository_FindAll_ContextTimeout(t *testing.T) {
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+	defer db.Close()
+
+	repo := NewOrderRepository(db)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Microsecond) // Very short timeout
+	defer cancel()
+	time.Sleep(2 * time.Microsecond)
+
+	result, err := repo.FindAll(ctx)
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Contains(t, err.Error(), "context deadline exceeded")
 }
 
 func TestExtractOrderUIDs_Empty(t *testing.T) {

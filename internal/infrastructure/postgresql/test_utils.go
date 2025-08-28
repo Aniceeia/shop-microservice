@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// ExampleOrderJSON возвращает пример JSON для тестирования
 func ExampleOrderJSON() string {
 	return `{
 		"order_uid": "b563feb7b2b84b6test",
@@ -59,12 +58,10 @@ func ExampleOrderJSON() string {
 	}`
 }
 
-// CreateBenchmarkOrder создает заказ для бенчмарк-тестов
 func CreateBenchmarkOrder() *model.Order {
 	order := createTestOrderDifferent()
 
-	// Добавляем больше items для бенчмарков
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		order.Items = append(order.Items, model.Item{
 			ChrtID:      i + 2,
 			TrackNumber: fmt.Sprintf("item-track-%d", i+2),
