@@ -90,7 +90,6 @@ func main() {
 	}
 
 	handler := api.NewHandler(repo, kafkaProducer, cash)
-
 	router := api.SetupRouter(handler)
 
 	if appPort == "" {

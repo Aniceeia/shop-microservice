@@ -1,1 +1,1 @@
-{"buildTargets":["air-local","down","logs","make","test","test-coverage","test-integration","test-kafka","test-kafka-health","test-kafka-integration","test-unit","up"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
+{"buildTargets":["air-local","down","logs","test","test-coverage","test-integration","test-kafka","test-kafka-health","test-kafka-integration","test-unit","up"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}

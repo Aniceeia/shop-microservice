@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.3
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2020 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Aug 28 18:49:45 2025
+# Make data base, printed on Fri Aug 29 16:01:56 2025
 
 # Variables
 
@@ -18,8 +20,6 @@ LC_ALL = C
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
 SSH_AGENT_LAUNCHER = gnome-keyring
-# environment
-GJS_DEBUG_OUTPUT = stderr
 # environment
 LC_NAME = en_CA.UTF-8
 # environment
@@ -57,7 +57,7 @@ VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Code/CachedData/2901c5ac6db8a986a5
 # environment
 LANG = C
 # environment
-XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.MNS5B3
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.AVF5B3
 # default
 .LOADED := 
 # default
@@ -93,13 +93,13 @@ MAKEFILE_LIST := Makefile
 # automatic
 @F = $(notdir $@)
 # environment
-VSCODE_PID = 5112
+VSCODE_PID = 2322
 # environment
 XDG_SESSION_TYPE = wayland
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/1992,unix/daliatoo:/tmp/.ICE-unix/1992
+SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2032,unix/daliatoo:/tmp/.ICE-unix/2032
 # automatic
 *F = $(notdir $*)
 # environment
@@ -123,8 +123,6 @@ XMODIFIERS = @im=ibus
 # environment
 LD_LIBRARY_PATH = :/usr/local/lib
 # environment
-GJS_DEBUG_TOPICS = JS ERROR;JS LOG
-# environment
 SHLVL = 0
 # environment
 MAKELEVEL := 0
@@ -147,7 +145,7 @@ LC_TIME = en_CA.UTF-8
 # environment
 GOTELEMETRY_GOPLS_CLIENT_START_TIME = 1741773601
 # environment
-INVOCATION_ID = e90b69443cf845f6b3a393f2033a2152
+INVOCATION_ID = 01859236a53746a6b80bf2bcdea4c00c
 # environment
 USERNAME = nastya
 # environment
@@ -158,6 +156,8 @@ LC_TELEPHONE = en_CA.UTF-8
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # automatic
 ?F = $(notdir $?)
+# environment
+DESKTOP_AUTOSTART_ID = 108f6720717ab1ec1517564725058158100000020320016
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # automatic
@@ -173,11 +173,11 @@ LOGNAME = nastya
 # environment
 GOTELEMETRY_GOPLS_CLIENT_TOKEN = 792
 # environment
-GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
+GIO_LAUNCHED_DESKTOP_FILE = /home/nastya/.config/autostart/code.desktop
 # makefile
 .DEFAULT_GOAL := up
 # environment
-SYSTEMD_EXEC_PID = 2028
+SYSTEMD_EXEC_PID = 2032
 # environment
 DISPLAY = :0
 # environment
@@ -187,11 +187,11 @@ GTK_MODULES = gail:atk-bridge
 # default
 MAKE_VERSION := 4.3
 # environment
-MANAGERPID = 1847
+MANAGERPID = 1882
 # environment
 LC_MEASUREMENT = en_CA.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 5112
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2322
 # environment
 _ = /usr/share/code/code
 # environment
@@ -199,7 +199,7 @@ LC_PAPER = en_CA.UTF-8
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-JOURNAL_STREAM = 8:17781
+JOURNAL_STREAM = 8:14808
 # environment
 GOMODCACHE = /home/nastya/goproject/pkg/mod
 # environment
@@ -235,7 +235,8 @@ GDMSESSION = ubuntu
 # environment
 LC_IDENTIFICATION = en_CA.UTF-8
 # variable set hash-table stats:
-# Load=112/1024=11%, Rehash=0, Collisions=7/142=5%
+ 
+# Load=111/1024=11%, Rehash=0, Collisions=7/141=5%
 
 # Pattern-specific Variable Values
 
@@ -307,9 +308,6 @@ test-unit:
 	# Unit тесты (без зависимостей)
 	cd internal/infrastructure/postgresql && \
 	go test -v . -count=1
-
- 
-make: *** No rule to make target 'all'.  Stop.
 
 # Not a target:
 .DEFAULT:
@@ -398,6 +396,6 @@ air-local:
 # strcache performance: lookups = 59 / hit rate = 32%
 # hash-table stats:
 # Load=40/8192=0%, Rehash=0, Collisions=0/59=0%
-# Finished Make data base on Thu Aug 28 18:49:45 2025
+# Finished Make data base on Fri Aug 29 16:01:56 2025
 
  
