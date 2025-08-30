@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"shop-microservice/internal/domain/model"
+
 	"testing"
 	"time"
 
@@ -14,6 +15,11 @@ import (
 type MockOrderRepository struct {
 	orders []*model.Order
 	err    error
+}
+
+// Save implements repositories.OrderRepository.
+func (m *MockOrderRepository) Save(ctx context.Context, order *model.Order) error {
+	panic("unimplemented")
 }
 
 func (m *MockOrderRepository) FindAll(ctx context.Context) ([]*model.Order, error) {

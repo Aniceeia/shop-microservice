@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"shop-microservice/internal/domain/model"
+	"shop-microservice/internal/domain/repositories"
+
 	"sync"
 	"time"
 )
@@ -63,7 +65,7 @@ func (cash *Cash) Clear() {
 }
 
 // WarmUp заполняет кэш данными из репозитория при старте сервиса
-func (cash *Cash) WarmUp(repo OrderRepository) error {
+func (cash *Cash) WarmUp(repo repositories.OrderRepository) error {
 	start := time.Now()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -88,10 +90,4 @@ func (cash *Cash) WarmUp(repo OrderRepository) error {
 
 	log.Printf("Cache warm-up completed. Loaded %d orders in %v", len(orders), time.Since(start))
 	return nil
-}
-
-// OrderRepository интерфейс для доступа к данным заказов
-type OrderRepository interface {
-	FindAll(ctx context.Context) ([]*model.Order, error)
-	FindByID(ctx context.Context, uid string) (*model.Order, error)
 }

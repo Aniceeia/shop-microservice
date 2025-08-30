@@ -1,0 +1,36 @@
+Потенциальная утечка горутин в Producer
+go
+// handler.go
+go func() {
+    ctx := context.Background()
+    if err := h.producer.Produce(ctx, order.OrderUID, order); err != nil {
+        log.Printf("Failed to produce message to Kafka: %v", err)
+    }
+}()
+Риск: При высоких нагрузках может создаться много горутин.
+
+Решение: Использовать worker pool или буферизованный канал:
+
+go
+// В Handler
+type Handler struct {
+    // ...
+    producerChan chan *model.Order
+}
+
+// Инициализация
+producerChan := make(chan *model.Order, 1000)
+go h.producerWorker(producerChan)
+
+// В обработчике
+h.producerChan <- &order
+
+// Worker
+func (h *Handler) producerWorker(ch <-chan *model.Order) {
+    for order := range ch {
+        ctx := context.Background()
+        if err := h.producer.Produce(ctx, order.OrderUID, order); err != nil {
+            log.Printf("Failed to produce message to Kafka: %v", err)
+        }
+    }
+}
