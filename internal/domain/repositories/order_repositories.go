@@ -2,7 +2,12 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"shop-microservice/internal/domain/model"
+)
+
+var (
+	ErrOrderNotFound = errors.New("not found")
 )
 
 type OrderRepository interface {

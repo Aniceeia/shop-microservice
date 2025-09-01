@@ -16,6 +16,11 @@ type Cache struct {
 	stats  map[string]cacheStats
 }
 
+// исправить потом
+func (c *Cache) NewCacheAdapter(cache *Cache) repositories.Cache {
+	return c
+}
+
 type cacheStats struct {
 	lastAccess  time.Time
 	accessCount int

@@ -9,6 +9,7 @@ RUN go mod download
 
 COPY . .
 RUN mkdir -p tmp
+COPY internal/static /app/internal/static
 
-EXPOSE 8081
+EXPOSE 8081 9000
 CMD ["./tmp/main"]

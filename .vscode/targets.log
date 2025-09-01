@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.3
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2020 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Aug 30 18:13:41 2025
+# Make data base, printed on Tue Sep  2 01:17:11 2025
 
 # Variables
 
@@ -55,7 +57,7 @@ VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Code/CachedData/2901c5ac6db8a986a5
 # environment
 LANG = C
 # environment
-XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.I5C9B3
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.D9SJC3
 # default
 .LOADED := 
 # default
@@ -91,13 +93,13 @@ MAKEFILE_LIST := Makefile
 # automatic
 @F = $(notdir $@)
 # environment
-VSCODE_PID = 2283
+VSCODE_PID = 2660
 # environment
 XDG_SESSION_TYPE = wayland
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/1981,unix/daliatoo:/tmp/.ICE-unix/1981
+SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2395,unix/daliatoo:/tmp/.ICE-unix/2395
 # automatic
 *F = $(notdir $*)
 # environment
@@ -143,7 +145,7 @@ LC_TIME = en_CA.UTF-8
 # environment
 GOTELEMETRY_GOPLS_CLIENT_START_TIME = 1741773601
 # environment
-INVOCATION_ID = dd654c243c714326971d9541f8361eb4
+INVOCATION_ID = 634ce1262ba04e59b2ac4c94379ac51b
 # environment
 USERNAME = nastya
 # environment
@@ -155,7 +157,7 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # automatic
 ?F = $(notdir $?)
 # environment
-DESKTOP_AUTOSTART_ID = 10f6a6b9cd609e983c1756566810609500000019810016
+DESKTOP_AUTOSTART_ID = 10bc38a10b275b8660175676501927499700000023950016
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # automatic
@@ -175,7 +177,7 @@ GIO_LAUNCHED_DESKTOP_FILE = /home/nastya/.config/autostart/code.desktop
 # makefile
 .DEFAULT_GOAL := up
 # environment
-SYSTEMD_EXEC_PID = 1981
+SYSTEMD_EXEC_PID = 2395
 # environment
 DISPLAY = :0
 # environment
@@ -185,11 +187,11 @@ GTK_MODULES = gail:atk-bridge
 # default
 MAKE_VERSION := 4.3
 # environment
-MANAGERPID = 1834
+MANAGERPID = 2241
 # environment
 LC_MEASUREMENT = en_CA.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2283
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2660
 # environment
 _ = /usr/share/code/code
 # environment
@@ -197,7 +199,7 @@ LC_PAPER = en_CA.UTF-8
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-JOURNAL_STREAM = 8:18518
+JOURNAL_STREAM = 8:15849
 # environment
 GOMODCACHE = /home/nastya/goproject/pkg/mod
 # environment
@@ -241,9 +243,9 @@ LC_IDENTIFICATION = en_CA.UTF-8
 
 # Directories
 
-# . (device 2050, inode 5642808): 25 files, no impossibilities.
+# . (device 2050, inode 5642808): 27 files, no impossibilities.
 
-# 25 files, no impossibilities in 1 directories.
+# 27 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -283,9 +285,6 @@ Makefile:
 #  Successfully updated.
 
 logs:
- 
-make: *** No rule to make target 'all'.  Stop.
-
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -314,6 +313,7 @@ test-unit:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+ 
 
 # Not a target:
 all:
@@ -390,12 +390,12 @@ air-local:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 42 / storage = 396 B / avg = 9 B
-# current buf: size = 8162 B / used = 396 B / count = 42 / avg = 9 B
+# strcache buffers: 1 (0) / strings = 44 / storage = 441 B / avg = 10 B
+# current buf: size = 8162 B / used = 441 B / count = 44 / avg = 10 B
 
-# strcache performance: lookups = 61 / hit rate = 31%
+# strcache performance: lookups = 63 / hit rate = 30%
 # hash-table stats:
-# Load=42/8192=1%, Rehash=0, Collisions=0/61=0%
-# Finished Make data base on Sat Aug 30 18:13:41 2025
+# Load=44/8192=1%, Rehash=0, Collisions=0/63=0%
+# Finished Make data base on Tue Sep  2 01:17:11 2025
 
  

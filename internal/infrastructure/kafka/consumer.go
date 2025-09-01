@@ -61,6 +61,7 @@ func (c *Consumer) Consume(ctx context.Context, handler MessageHandler) error {
 
 			if err := handler(string(msg.Key), msg.Value); err != nil {
 				log.Printf("Error handling message: %v", err)
+				// Продолжаем обработку следующих сообщений
 				continue
 			}
 

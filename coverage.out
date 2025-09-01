@@ -1,0 +1,12 @@
+mode: set
+shop-microservice/tests/unit/unit_handler.go:25.87,28.2 2 0
+shop-microservice/tests/unit/unit_handler.go:30.95,32.24 2 0
+shop-microservice/tests/unit/unit_handler.go:32.24,34.3 1 0
+shop-microservice/tests/unit/unit_handler.go:35.2,35.50 1 0
+shop-microservice/tests/unit/unit_handler.go:38.86,41.2 2 0
+shop-microservice/tests/unit/unit_handler.go:43.68,46.2 2 0
+shop-microservice/tests/unit/unit_handler.go:48.93,51.2 2 0
+shop-microservice/tests/unit/unit_handler.go:53.39,55.2 1 0
+shop-microservice/tests/unit/unit_handler.go:57.52,122.2 13 0
+shop-microservice/tests/unit/unit_handler.go:124.53,144.2 11 0
+shop-microservice/tests/unit/unit_handler.go:146.54,161.2 10 0
