@@ -10,6 +10,11 @@ import (
 	"github.com/segmentio/kafka-go"
 )
 
+const (
+	FirstOffset int64 = -2
+	LastOffset  int64 = -1
+)
+
 type Consumer struct {
 	reader *kafka.Reader
 	topic  string

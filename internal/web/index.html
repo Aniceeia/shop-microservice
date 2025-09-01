@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Service</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { margin-top: 50px; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="text"] { flex: 1; padding: 10px; font-size: 16px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .order-details { margin-top: 20px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .hidden { display: none; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Order Search</h1>
+        <div class="search-box">
+            <input type="text" id="orderId" placeholder="Enter Order ID">
+            <button onclick="searchOrder()">Search</button>
+        </div>
+        <div id="error" class="error hidden"></div>
+        <div id="orderDetails" class="order-details hidden"></div>
+    </div>
+
+    <script>
+        function searchOrder() {
+            const orderId = document.getElementById('orderId').value.trim();
+            const errorDiv = document.getElementById('error');
+            const detailsDiv = document.getElementById('orderDetails');
+            
+            errorDiv.classList.add('hidden');
+            detailsDiv.classList.add('hidden');
+            
+            if (!orderId) {
+                showError('Please enter an Order ID');
+                return;
+            }
+            
+            fetch(`/api/orders/${orderId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Order not found');
+                    }
+                    return response.json();
+                })
+                .then(order => {
+                    displayOrder(order);
+                })
+                .catch(error => {
+                    showError(error.message);
+                });
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+        
+        function displayOrder(order) {
+            const detailsDiv = document.getElementById('orderDetails');
+            detailsDiv.innerHTML = `
+                <h2>Order Details: ${order.order_uid}</h2>
+                <p><strong>Track Number:</strong> ${order.track_number}</p>
+                <p><strong>Customer:</strong> ${order.delivery.name} (${order.delivery.email})</p>
+                <p><strong>Address:</strong> ${order.delivery.city}, ${order.delivery.address}</p>
+                <p><strong>Total Amount:</strong> $${order.payment.amount / 100}</p>
+                <h3>Items (${order.items.length}):</h3>
+                <ul>
+                    ${order.items.map(item => `
+                        <li>${item.name} - $${item.price / 100} x ${item.quantity || 1}</li>
+                    `).join('')}
+                </ul>
+            `;
+            detailsDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

@@ -2,12 +2,13 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"shop-microservice/internal/domain/model"
 	"shop-microservice/internal/domain/repositories"
-	"shop-microservice/internal/infrastructure/cash"
+	"shop-microservice/internal/infrastructure/cache"
 	"shop-microservice/internal/infrastructure/kafka"
 	"sync"
 	"time"
@@ -18,20 +19,20 @@ import (
 type Handler struct {
 	repo         repositories.OrderRepository
 	producer     *kafka.Producer
-	cash         *cash.Cash
+	cache        *cache.Cache
 	producerChan chan *model.Order
 	workers      int
 	wg           sync.WaitGroup
 }
 
-func NewHandler(repo repositories.OrderRepository, producer *kafka.Producer, cash *cash.Cash, workers int) *Handler {
+func NewHandler(repo repositories.OrderRepository, producer *kafka.Producer, cache *cache.Cache, workers int) *Handler {
 	if workers <= 0 {
-		workers = 3
+		workers = 10
 	}
 	h := &Handler{
 		repo:         repo,
 		producer:     producer,
-		cash:         cash,
+		cache:        cache,
 		producerChan: make(chan *model.Order, 1000),
 		workers:      workers,
 	}
@@ -55,17 +56,15 @@ func (h *Handler) workerLoop(workerNumber int) {
 		if err := h.producer.Produce(ctx, order.OrderUID, order); err != nil {
 			log.Printf("failed to produce to Kafka: worker: %d, ERROR: %v", workerNumber, err)
 		} else {
-			log.Printf("order successfully prooduced: worker: %d, order: %v", workerNumber, order.OrderUID)
+			log.Printf("order successfully produced: worker: %d, order: %v", workerNumber, order.OrderUID)
 		}
 	}
-	log.Printf("Shutting down worker %d", workerNumber)
 }
 
 func (h *Handler) CreateOrder(c *gin.Context) {
 	var order model.Order
 
 	if err := c.ShouldBindJSON(&order); err != nil {
-		log.Printf("Invalid json payload: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":   "Invalid request payload",
 			"details": err.Error(),
@@ -77,7 +76,7 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	h.cash.Set(order.OrderUID, &order)
+	h.cache.Set(order.OrderUID, &order)
 
 	ctx := c.Request.Context()
 	if err := h.repo.Save(ctx, &order); err != nil {
@@ -85,12 +84,9 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	select {
-	case h.producerChan <- &order:
-		log.Printf("CreateOrder: message send successfully!")
-	default:
-		log.Printf("CreateOrder: producer is full, message dropped")
-		//мониторинг метрич через прометеус, графану
+	if err := h.orderToChannel(&order); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "channel is full, message dropped"})
+		//return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -99,9 +95,18 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	})
 }
 
+func (h *Handler) orderToChannel(order *model.Order) error {
+	select {
+	case h.producerChan <- order:
+		return nil
+	default:
+		return errors.New("creation error, message dropped")
+	}
+}
+
 func (h *Handler) validateOrder(order *model.Order) error {
 	fail := func(err string) error {
-		return fmt.Errorf("Validate err: %w", err)
+		return fmt.Errorf("validation err: %v", err)
 	}
 	if order.OrderUID == "" {
 		return fail("order uid is required")
@@ -124,11 +129,10 @@ func (h *Handler) validateOrder(order *model.Order) error {
 	return nil
 }
 
-// GetOrderByID возвращает заказ по ID (с использованием кэша)
 func (h *Handler) GetOrderByID(c *gin.Context) {
 	orderUID := c.Param("id")
 
-	if order, exists := h.cash.Get(orderUID); exists {
+	if order, exists := h.cache.Get(orderUID); exists {
 		c.JSON(http.StatusOK, order)
 		return
 	}
@@ -142,13 +146,13 @@ func (h *Handler) GetOrderByID(c *gin.Context) {
 		return
 	}
 
-	h.cash.Set(orderUID, order)
+	h.cache.Set(orderUID, order)
 
 	c.JSON(http.StatusOK, order)
 }
 
 func (h *Handler) GetAllOrders(c *gin.Context) {
-	orders := h.cash.GetAll()
+	orders := h.cache.GetAll()
 	if len(orders) > 0 {
 		log.Printf("Returning orders from cache")
 		c.JSON(http.StatusOK, orders)
@@ -164,19 +168,18 @@ func (h *Handler) GetAllOrders(c *gin.Context) {
 	}
 	for _, order := range dbOrders {
 		if order != nil {
-			h.cash.Set(order.OrderUID, order)
+			h.cache.Set(order.OrderUID, order)
 		}
 	}
 	log.Printf("Returning orders from database")
 	c.JSON(http.StatusOK, orders)
 }
 
-// HealthCheck проверяет соединение с БД и состояние кэша
 func (h *Handler) HealthCheck(c *gin.Context) {
 	health := gin.H{
 		"status":       "healthy",
-		"cache_size":   h.cash.Size(),
-		"cache_loaded": h.cash.Size() > 0,
+		"cache_size":   h.cache.Size(),
+		"cache_loaded": h.cache.Size() > 0,
 		"timestamp":    time.Now().Format(time.RFC3339),
 	}
 
