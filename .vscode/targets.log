@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue Sep  2 01:17:11 2025
+# Make data base, printed on Tue Sep  2 13:31:04 2025
 
 # Variables
 
@@ -21,13 +21,17 @@ GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
 SSH_AGENT_LAUNCHER = gnome-keyring
 # environment
+APPIMAGE = /home/nastya/Downloads/Cursor-1.5.9-x86_64.AppImage
+# environment
 LC_NAME = en_CA.UTF-8
+# environment
+QT_PLUGIN_PATH = /tmp/.mount_Cursorxpuh4o/usr/lib/qt4/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/i386-linux-gnu/qt4/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/x86_64-linux-gnu/qt4/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/aarch64-linux-gnu/qt4/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib32/qt4/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib64/qt4/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/qt5/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/i386-linux-gnu/qt5/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/x86_64-linux-gnu/qt5/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib/aarch64-linux-gnu/qt5/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib32/qt5/plugins/:/tmp/.mount_Cursorxpuh4o/usr/lib64/qt5/plugins/:
 # environment
 LC_NUMERIC = en_CA.UTF-8
 # environment
 VSCODE_CRASH_REPORTER_PROCESS_TYPE = extensionHost
 # environment
-VSCODE_CWD = /home/nastya
+VSCODE_CWD = /home/nastya/Downloads
 # environment
 LC_ADDRESS = en_CA.UTF-8
 # default
@@ -47,23 +51,27 @@ PWD = /home/nastya/Downloads/shop/shop-microservice
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
-XDG_DATA_DIRS = /usr/share/ubuntu:/home/nastya/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+XDG_DATA_DIRS = /tmp/.mount_Cursorxpuh4o/usr/share/:/usr/local/share:/usr/share:/usr/share/ubuntu:/home/nastya/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # automatic
 ^D = $(patsubst %/,%,$(dir $^))
 # automatic
 %F = $(notdir $%)
 # environment
-VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Code/CachedData/2901c5ac6db8a986a5666c3af51ff804d05af0d4
+VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Cursor/CachedData/de327274300c6f38ec9f4240d11e82c3b0660b20
+# environment
+OWD = /home/nastya/Downloads
 # environment
 LANG = C
 # environment
-XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.D9SJC3
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.7BQ6B3
 # default
 .LOADED := 
 # default
 .INCLUDE_DIRS = /usr/local/include /usr/include /usr/include
 # makefile
 MAKEFLAGS = pqrR
+# environment
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=95cf5204e64378dbded5894f68b69027
 # makefile
 CURDIR := /home/nastya/Downloads/shop/shop-microservice
 # environment
@@ -93,23 +101,23 @@ MAKEFILE_LIST := Makefile
 # automatic
 @F = $(notdir $@)
 # environment
-VSCODE_PID = 2660
+VSCODE_PID = 185024
 # environment
 XDG_SESSION_TYPE = wayland
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2395,unix/daliatoo:/tmp/.ICE-unix/2395
+SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2482,unix/daliatoo:/tmp/.ICE-unix/2482
 # automatic
 *F = $(notdir $*)
 # environment
-CHROME_DESKTOP = code.desktop
+CHROME_DESKTOP = cursor.desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=95cf5204e64378dbded5894f68b69027
 # automatic
 <D = $(patsubst %/,%,$(dir $<))
 # environment
-VSCODE_NLS_CONFIG = {"userLocale":"en-gb","osLocale":"en-gb","resolvedLanguage":"en","defaultMessagesFile":"/usr/share/code/resources/app/out/nls.messages.json","locale":"en-gb","availableLanguages":{}}
+VSCODE_NLS_CONFIG = {"userLocale":"en-gb","osLocale":"en-gb","resolvedLanguage":"en","defaultMessagesFile":"/tmp/.mount_Cursorxpuh4o/usr/share/cursor/resources/app/out/nls.messages.json","locale":"en-gb","availableLanguages":{}}
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
@@ -121,17 +129,19 @@ MAKECMDGOALS := all
 # environment
 XMODIFIERS = @im=ibus
 # environment
-LD_LIBRARY_PATH = :/usr/local/lib
+LD_LIBRARY_PATH = /tmp/.mount_Cursorxpuh4o/usr/lib/:/tmp/.mount_Cursorxpuh4o/usr/lib32/:/tmp/.mount_Cursorxpuh4o/usr/lib64/:/tmp/.mount_Cursorxpuh4o/lib/:/tmp/.mount_Cursorxpuh4o/lib/i386-linux-gnu/:/tmp/.mount_Cursorxpuh4o/lib/x86_64-linux-gnu/:/tmp/.mount_Cursorxpuh4o/lib/aarch64-linux-gnu/:/tmp/.mount_Cursorxpuh4o/lib32/:/tmp/.mount_Cursorxpuh4o/lib64/::/usr/local/lib
 # environment
 SHLVL = 0
 # environment
 MAKELEVEL := 0
 # environment
+APPDIR = /tmp/.mount_Cursorxpuh4o
+# environment
 IM_CONFIG_CHECK_ENV = 1
 # default
 MAKE = $(MAKE_COMMAND)
 # environment
-PATH = /home/nastya/.local/bin:/home/nastya/.local/bin:/home/nastya/.local/bin:/home/nastya/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/usr/local/go/bin:/home/nastya/goproject/bin:/usr/local/lib:/usr/local/go/bin:/home/nastya/goproject/bin
+PATH = /home/nastya/.local/bin:/home/nastya/.local/bin:/home/nastya/.local/bin:/tmp/.mount_Cursorxpuh4o/usr/bin/:/tmp/.mount_Cursorxpuh4o/usr/sbin/:/tmp/.mount_Cursorxpuh4o/usr/games/:/tmp/.mount_Cursorxpuh4o/bin/:/tmp/.mount_Cursorxpuh4o/sbin/:/home/nastya/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin:/usr/local/go/bin:/home/nastya/goproject/bin:/usr/local/lib:/usr/local/go/bin:/home/nastya/goproject/bin
 # default
 MAKEFILES := 
 # environment
@@ -143,13 +153,13 @@ LC_MONETARY = en_CA.UTF-8
 # environment
 LC_TIME = en_CA.UTF-8
 # environment
-GOTELEMETRY_GOPLS_CLIENT_START_TIME = 1741773601
-# environment
-INVOCATION_ID = 634ce1262ba04e59b2ac4c94379ac51b
+INVOCATION_ID = 404fdcfd4ba946e5baa42f4ff4e2b7ea
 # environment
 USERNAME = nastya
 # environment
 GNOME_SETUP_DISPLAY = :1
+# environment
+ARGV0 = /home/nastya/Downloads/Cursor-1.5.9-x86_64.AppImage
 # environment
 LC_TELEPHONE = en_CA.UTF-8
 # environment
@@ -157,9 +167,9 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # automatic
 ?F = $(notdir $?)
 # environment
-DESKTOP_AUTOSTART_ID = 10bc38a10b275b8660175676501927499700000023950016
-# environment
 XDG_CURRENT_DESKTOP = Unity
+# environment
+CURSOR_TRACE_ID = 2d55fcd03f404e1f9bba8e75bdccbf20
 # automatic
 +F = $(notdir $+)
 # environment
@@ -170,14 +180,10 @@ ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 GNUMAKEFLAGS := 
 # environment
 LOGNAME = nastya
-# environment
-GOTELEMETRY_GOPLS_CLIENT_TOKEN = 792
-# environment
-GIO_LAUNCHED_DESKTOP_FILE = /home/nastya/.config/autostart/code.desktop
 # makefile
-.DEFAULT_GOAL := up
+.DEFAULT_GOAL := generate-test-data
 # environment
-SYSTEMD_EXEC_PID = 2395
+SYSTEMD_EXEC_PID = 2482
 # environment
 DISPLAY = :0
 # environment
@@ -187,21 +193,25 @@ GTK_MODULES = gail:atk-bridge
 # default
 MAKE_VERSION := 4.3
 # environment
-MANAGERPID = 2241
+MANAGERPID = 2334
+# environment
+DBUS_STARTER_BUS_TYPE = session
 # environment
 LC_MEASUREMENT = en_CA.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2660
+NODE_TLS_REJECT_UNAUTHORIZED = undefined
 # environment
-_ = /usr/share/code/code
+GIO_LAUNCHED_DESKTOP_FILE_PID = 185024
+# environment
+_ = /tmp/.mount_Cursorxpuh4o/usr/share/cursor/cursor
 # environment
 LC_PAPER = en_CA.UTF-8
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-JOURNAL_STREAM = 8:15849
+VSCODE_PROCESS_TITLE = extension-host [2-3]
 # environment
-GOMODCACHE = /home/nastya/goproject/pkg/mod
+JOURNAL_STREAM = 8:11200
 # environment
 XDG_SESSION_CLASS = user
 # environment
@@ -211,13 +221,13 @@ QT_IM_MODULE = ibus
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-59bea211-1.10-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-8e0367db-1.5.-main.sock
+# environment
+GSETTINGS_SCHEMA_DIR = /tmp/.mount_Cursorxpuh4o/usr/share/glib-2.0/schemas/:
 # environment
 IM_CONFIG_PHASE = 1
 # environment
 PAPERSIZE = letter
-# environment
-GOPROXY = https://proxy.golang.org,direct
 # default
 .RECIPEPREFIX := 
 # automatic
@@ -227,6 +237,8 @@ SUFFIXES :=
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell nocomment grouped-target extra-prereqs archives jobserver output-sync check-symlink load
 # environment
+PERLLIB = /tmp/.mount_Cursorxpuh4o/usr/share/perl5/:/tmp/.mount_Cursorxpuh4o/usr/lib/perl5/:
+# environment
 XDG_MENU_PREFIX = gnome-
 # environment
 VSCODE_ESM_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
@@ -235,7 +247,7 @@ GDMSESSION = ubuntu
 # environment
 LC_IDENTIFICATION = en_CA.UTF-8
 # variable set hash-table stats:
-# Load=111/1024=11%, Rehash=0, Collisions=7/141=5%
+# Load=117/1024=11%, Rehash=0, Collisions=6/147=4%
 
 # Pattern-specific Variable Values
 
@@ -243,9 +255,9 @@ LC_IDENTIFICATION = en_CA.UTF-8
 
 # Directories
 
-# . (device 2050, inode 5642808): 27 files, no impossibilities.
+# . (device 2050, inode 5642808): 30 files, no impossibilities.
 
-# 27 files, no impossibilities in 1 directories.
+# 30 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -254,33 +266,20 @@ LC_IDENTIFICATION = en_CA.UTF-8
 # Files
 
 test-coverage:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 23):
-	docker-compose -f docker/docker-compose.yml up -d postgres && \
-	sleep 5 && \
-	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../../docker/.env | xargs) go test -v . -coverprofile=coverage.out && \
-	go tool cover -html=coverage.out
-
-test-integration:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 30):
-	# Запуск интеграционных тестов
-	env $$(cat docker/.env | xargs) \
-	docker-compose -f docker/docker-compose.yml up -d postgres && \
-	sleep 5 && \
-	cd internal/infrastructure/postgresql && \
-	env $$(cat ../../../docker/.env | xargs) go test -tags=integration -v . -count=1
+#  recipe to execute (from 'Makefile', line 13):
+	go test ./tests/unit/... -coverprofile=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+	go tool cover -func=coverage.out
 
 # Not a target:
 Makefile:
+ 
 #  Implicit rule search has been done.
-#  Last modified 2025-08-28 01:31:58.905983454
+#  Last modified 2025-09-02 11:21:43.290975514
 #  File has been updated.
 #  Successfully updated.
 
@@ -288,14 +287,14 @@ logs:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 11):
+#  recipe to execute (from 'Makefile', line 32):
 	docker-compose -f docker/docker-compose.yml logs -f app
 
 up:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 5):
+#  recipe to execute (from 'Makefile', line 26):
 	docker-compose -f docker/docker-compose.yml up --build
 
 test-unit:
@@ -303,17 +302,22 @@ test-unit:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 38):
-	# Unit тесты (без зависимостей)
-	cd internal/infrastructure/postgresql && \
-	go test -v . -count=1
+#  recipe to execute (from 'Makefile', line 7):
+	go test ./tests/unit/... -v -coverprofile=coverage-unit.out
+
+test-load: generate-test-data
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 10):
+	go test ./tests/load/... -v -tags=load -timeout=10m
 
 # Not a target:
 .DEFAULT:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
- 
 
 # Not a target:
 all:
@@ -322,38 +326,21 @@ all:
 #  File does not exist.
 #  File has not been updated.
 
-test:
+test: test-unit test-coverage
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 17):
-	docker-compose -f docker/docker-compose.yml up -d postgres && \
-	sleep 10 && \
-	cd internal/infrastructure/postgresql && \
-	DB_HOST=localhost DB_PORT=5433 DB_USER=orders_user DB_PASSWORD=orders_password DB_NAME=orders_db go test -v . -count=1
 
-test-kafka-integration:
+generate-test-data:
+#  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
-#  Modification time never checked.
+#  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 50):
-	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
-	sleep 30 && \
-	cd internal/infrastructure/kafka && \
-	KAFKA_BROKERS=localhost:9093 go test -v -tags=integration . -count=1
+#  recipe to execute (from 'Makefile', line 4):
+	go run tests/generate_data.go
 
-test-kafka-health:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 57):
-	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
-	sleep 30 && \
-	docker exec docker-kafka-1 kafka-broker-api-versions --bootstrap-server localhost:9092 && \
-	echo "Kafka is healthy"
-
-.PHONY: test test-unit test-integration
+.PHONY: test test-unit test-load test-coverage generate-test-data
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -362,40 +349,32 @@ down:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 8):
+#  recipe to execute (from 'Makefile', line 29):
 	docker-compose -f docker/docker-compose.yml down -v
 
-test-kafka:
+frontend-test:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 44):
-	docker-compose -f docker/docker-compose.yml up -d zookeeper kafka && \
-	sleep 30 && \
-	cd internal/infrastructure/kafka && \
-	KAFKA_BROKERS=localhost:9093 go test -v . -count=1
-
-air-local:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 14):
-	air -c .air.toml
+#  recipe to execute (from 'Makefile', line 21):
+	@echo "Add test button to frontend:"
+	@echo '<button onclick="runTests()">Run Tests</button>'
+	@echo '<script>function runTests() { fetch("/api/test").then(r => r.json()).then(console.log) }</script>'
 
 # files hash-table stats:
-# Load=16/1024=2%, Rehash=0, Collisions=0/32=0%
+# Load=14/1024=1%, Rehash=0, Collisions=0/37=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 44 / storage = 441 B / avg = 10 B
-# current buf: size = 8162 B / used = 441 B / count = 44 / avg = 10 B
+# strcache buffers: 1 (0) / strings = 45 / storage = 454 B / avg = 10 B
+# current buf: size = 8162 B / used = 454 B / count = 45 / avg = 10 B
 
-# strcache performance: lookups = 63 / hit rate = 30%
+# strcache performance: lookups = 67 / hit rate = 32%
 # hash-table stats:
-# Load=44/8192=1%, Rehash=0, Collisions=0/63=0%
-# Finished Make data base on Tue Sep  2 01:17:11 2025
+# Load=45/8192=1%, Rehash=0, Collisions=0/67=0%
+# Finished Make data base on Tue Sep  2 13:31:04 2025
 
  

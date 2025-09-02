@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<title>unit: Go Coverage Report</title>
+		<title>handlers: Go Coverage Report</title>
 		<style>
 			body {
 				background: black;
@@ -55,7 +55,19 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">shop-microservice/tests/unit/unit_handler.go (0.0%)</option>
+				<option value="file0">shop-microservice/internal/api/handlers/handler.go (55.9%)</option>
+				
+				<option value="file1">shop-microservice/internal/api/middleware/middleware.go (72.7%)</option>
+				
+				<option value="file2">shop-microservice/internal/api/middleware/validation.go (100.0%)</option>
+				
+				<option value="file3">shop-microservice/internal/api/router.go (100.0%)</option>
+				
+				<option value="file4">shop-microservice/internal/application/usecases/order_usecase.go (86.4%)</option>
+				
+				<option value="file5">shop-microservice/internal/infrastructure/cache/cache_adapter.go (100.0%)</option>
+				
+				<option value="file6">shop-microservice/internal/infrastructure/cache/order_cache.go (97.7%)</option>
 				
 				</select>
 			</div>
@@ -69,167 +81,582 @@
 		</div>
 		<div id="content">
 		
-		<pre class="file" id="file0" style="display: none">package unit
+		<pre class="file" id="file0" style="display: none">package handlers
 
 import (
-        "bytes"
-        "context"
-        "encoding/json"
+        "errors"
         "net/http"
-        "net/http/httptest"
-        "testing"
-        "time"
+        "shop-microservice/internal/application/usecases"
+        "shop-microservice/internal/domain/model"
 
+        "github.com/gin-gonic/gin"
+)
+
+type Handler struct {
+        useCase usecases.OrderUseCase
+}
+
+func NewHandler(useCase usecases.OrderUseCase) *Handler <span class="cov8" title="1">{
+        return &amp;Handler{
+                useCase: useCase,
+        }
+}</span>
+
+func (h *Handler) CreateOrder(c *gin.Context) <span class="cov8" title="1">{
+        var order model.Order
+
+        if err := c.ShouldBindJSON(&amp;order); err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusBadRequest, gin.H{
+                        "error":   "Invalid request payload",
+                        "details": err.Error(),
+                })
+                return
+        }</span>
+
+        <span class="cov8" title="1">ctx := c.Request.Context()
+        if err := h.useCase.CreateOrder(ctx, &amp;order); err != nil </span><span class="cov8" title="1">{
+                if errors.Is(err, usecases.ErrValidation) </span><span class="cov8" title="1">{
+                        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+                }</span> else<span class="cov8" title="1"> {
+                        c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create order"})
+                }</span>
+                <span class="cov8" title="1">return</span>
+        }
+
+        <span class="cov0" title="0">c.JSON(http.StatusCreated, gin.H{
+                "message":   "Order created successfully",
+                "order_uid": order.OrderUID,
+        })</span>
+}
+
+func (h *Handler) GetOrderByID(c *gin.Context) <span class="cov0" title="0">{
+        orderUID := c.Param("id")
+
+        ctx := c.Request.Context()
+        order, err := h.useCase.GetOrderByID(ctx, orderUID)
+        if err != nil </span><span class="cov0" title="0">{
+                c.JSON(http.StatusNotFound, gin.H{
+                        "error": "Order not found",
+                        "uid":   orderUID,
+                })
+                return
+        }</span>
+
+        <span class="cov0" title="0">c.JSON(http.StatusOK, order)</span>
+}
+
+func (h *Handler) GetAllOrders(c *gin.Context) <span class="cov8" title="1">{
+        ctx := c.Request.Context()
+        orders, err := h.useCase.GetAllOrders(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                c.JSON(http.StatusInternalServerError, gin.H{
+                        "error": "failed to fetch orders",
+                })
+                return
+        }</span>
+
+        <span class="cov0" title="0">c.JSON(http.StatusOK, orders)</span>
+}
+
+func (h *Handler) HealthCheck(c *gin.Context) <span class="cov8" title="1">{
+        ctx := c.Request.Context()
+        health, err := h.useCase.HealthCheck(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                c.JSON(http.StatusServiceUnavailable, health)
+                return
+        }</span>
+
+        <span class="cov0" title="0">c.JSON(http.StatusOK, health)</span>
+}
+
+func (h *Handler) RunTests(c *gin.Context) <span class="cov0" title="0">{
+        tests := map[string]string{
+                "database_connection": "ok",
+                "cache_initialized":   "ok",
+                "kafka_connection":    "ok",
+        }
+
+        c.JSON(http.StatusOK, gin.H{
+                "status": "success",
+                "tests":  tests,
+        })
+}</span>
+
+func (h *Handler) Shutdown() <span class="cov0" title="0">{
+        h.useCase.Shutdown()
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package middleware
+
+import (
+        "net/http"
+
+        "github.com/gin-gonic/gin"
+)
+
+func ValidateOrderIDMiddleware() gin.HandlerFunc <span class="cov8" title="1">{
+        return func(c *gin.Context) </span><span class="cov8" title="1">{
+                orderID := c.Param("id")
+                if orderID == "" </span><span class="cov0" title="0">{
+                        c.JSON(http.StatusBadRequest, gin.H{
+                                "error": "Order ID is required",
+                        })
+                        c.Abort()
+                        return
+                }</span>
+
+                <span class="cov8" title="1">if err := ValidateOrderID(orderID); err != nil </span><span class="cov8" title="1">{
+                        c.JSON(http.StatusBadRequest, gin.H{
+                                "error":   "Invalid order ID",
+                                "details": err.Error(),
+                        })
+                        c.Abort()
+                        return
+                }</span>
+
+                <span class="cov8" title="1">c.Next()</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package middleware
+
+import (
+        "fmt"
+        "regexp"
+        "strings"
+)
+
+var (
+        orderIDRegex     = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+        minOrderIDLength = 6
+        maxOrderIDLength = 50
+)
+
+func ValidateOrderID(orderID string) error <span class="cov8" title="1">{
+        if len(orderID) &lt; minOrderIDLength </span><span class="cov8" title="1">{
+                return fmt.Errorf("order ID must be at least %d characters long", minOrderIDLength)
+        }</span>
+
+        <span class="cov8" title="1">if len(orderID) &gt; maxOrderIDLength </span><span class="cov8" title="1">{
+                return fmt.Errorf("order ID must be at most %d characters long", maxOrderIDLength)
+        }</span>
+
+        <span class="cov8" title="1">if !orderIDRegex.MatchString(orderID) </span><span class="cov8" title="1">{
+                return fmt.Errorf("order ID can only contain letters, numbers, underscores and hyphens")
+        }</span>
+
+        // не менее 10
+        <span class="cov8" title="1">if strings.Contains(orderID, "test") &amp;&amp; len(orderID) &lt; 10 </span><span class="cov8" title="1">{
+                return fmt.Errorf("test order IDs should follow the pattern from test data")
+        }</span>
+
+        //наличие только цифр (слишком простой ID)
+        <span class="cov8" title="1">if isAllDigits(orderID) </span><span class="cov8" title="1">{
+                return fmt.Errorf("order ID should not consist only of digits")
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+func isAllDigits(s string) bool <span class="cov8" title="1">{
+        for _, r := range s </span><span class="cov8" title="1">{
+                if r &lt; '0' || r &gt; '9' </span><span class="cov8" title="1">{
+                        return false
+                }</span>
+        }
+        <span class="cov8" title="1">return true</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package api
+
+import (
+        "path/filepath"
+        "runtime"
         "shop-microservice/internal/api/handlers"
+        "shop-microservice/internal/api/middleware"
+
+        "github.com/gin-gonic/gin"
+)
+
+func SetupRouter(handler *handlers.Handler) *gin.Engine <span class="cov8" title="1">{
+        router := gin.Default()
+
+        _, filename, _, _ := runtime.Caller(0)
+        rootDir := filepath.Join(filepath.Dir(filename), "../static")
+        router.Static("/static", rootDir)
+
+        router.GET("/", func(c *gin.Context) </span><span class="cov8" title="1">{
+                c.File(filepath.Join(rootDir, "index.html"))
+        }</span>)
+        <span class="cov8" title="1">api := router.Group("/api")
+        </span><span class="cov8" title="1">{
+                api.POST("/orders", handler.CreateOrder)
+                api.GET("/orders/:id", middleware.ValidateOrderIDMiddleware(), handler.GetOrderByID)
+                api.GET("/orders", handler.GetAllOrders)
+                api.GET("/health", handler.HealthCheck)
+                api.GET("/test", handler.RunTests)
+        }</span>
+
+        <span class="cov8" title="1">return router</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package usecases
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "log"
+        "shop-microservice/internal/domain/model"
+        "shop-microservice/internal/domain/repositories"
+        "sync"
+        "time"
+)
+
+var (
+        ErrValidation   = errors.New("validation err")
+        ErrServerClosed = errors.New("server is closed")
+)
+
+type OrderUseCase interface {
+        CreateOrder(ctx context.Context, order *model.Order) error
+        GetOrderByID(ctx context.Context, id string) (*model.Order, error)
+        GetAllOrders(ctx context.Context) ([]*model.Order, error)
+        ValidateOrder(order *model.Order) error
+        HealthCheck(ctx context.Context) (map[string]interface{}, error)
+        Shutdown()
+}
+
+type orderUseCase struct {
+        repo            repositories.OrderRepository
+        messageProducer repositories.MessageProducer
+        cache           repositories.Cache
+        producerChan    chan *model.Order
+        workers         int
+        wg              sync.WaitGroup
+}
+
+func NewOrderUseCase(
+        repo repositories.OrderRepository,
+        messageProducer repositories.MessageProducer,
+        cache repositories.Cache,
+        workers int,
+        bufferSize int,
+) OrderUseCase <span class="cov8" title="1">{
+        if workers &lt;= 0 </span><span class="cov0" title="0">{
+                workers = 10
+        }</span>
+        <span class="cov8" title="1">if bufferSize &lt;= 0 </span><span class="cov0" title="0">{
+                bufferSize = 1000
+        }</span>
+
+        <span class="cov8" title="1">uc := &amp;orderUseCase{
+                repo:            repo,
+                messageProducer: messageProducer,
+                cache:           cache,
+                producerChan:    make(chan *model.Order, bufferSize),
+                workers:         workers,
+        }
+        uc.startWorkers()
+        return uc</span>
+}
+
+func (uc *orderUseCase) startWorkers() <span class="cov8" title="1">{
+        for i := 0; i &lt; uc.workers; i++ </span><span class="cov8" title="1">{
+                uc.wg.Add(1)
+                go func(workerNumber int) </span><span class="cov8" title="1">{
+                        defer uc.wg.Done()
+                        uc.workerLoop(workerNumber)
+                }</span>(i)
+        }
+}
+
+func (uc *orderUseCase) workerLoop(workerNumber int) <span class="cov8" title="1">{
+        for order := range uc.producerChan </span><span class="cov8" title="1">{
+                ctx := context.Background()
+                if err := uc.messageProducer.ProduceOrder(ctx, order); err != nil </span><span class="cov0" title="0">{
+                        log.Printf("failed to produce message: worker: %d, ERROR: %v", workerNumber, err)
+                }</span> else<span class="cov8" title="1"> {
+                        log.Printf("order successfully sent to message queue: worker: %d, order: %v", workerNumber, order.OrderUID)
+                }</span>
+        }
+}
+
+func (uc *orderUseCase) CreateOrder(ctx context.Context, order *model.Order) error <span class="cov8" title="1">{
+        if err := uc.ValidateOrder(order); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Сохраняем в кэш
+        <span class="cov8" title="1">uc.cache.Set(order.OrderUID, order)
+
+        // Сохраняем в базу данных
+        if err := uc.repo.Save(ctx, order); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to save order: %w", err)
+        }</span>
+
+        // Отправляем в канал для асинхронной обработки
+        <span class="cov8" title="1">select </span>{
+        case uc.producerChan &lt;- order:<span class="cov8" title="1">
+                return nil</span>
+        default:<span class="cov0" title="0">
+                return errors.New("channel is full, message dropped")</span>
+        }
+}
+
+func (uc *orderUseCase) GetOrderByID(ctx context.Context, id string) (*model.Order, error) <span class="cov8" title="1">{
+        // Пытаемся получить из кэша
+        if order, exists := uc.cache.Get(id); exists </span><span class="cov0" title="0">{
+                return order, nil
+        }</span>
+
+        // Если нет в кэше, ищем в базе
+        <span class="cov8" title="1">order, err := uc.repo.FindByID(ctx, id)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("order not found: %w", err)
+        }</span>
+
+        // Сохраняем в кэш для будущих запросов
+        <span class="cov8" title="1">uc.cache.Set(id, order)
+        return order, nil</span>
+}
+
+func (uc *orderUseCase) GetAllOrders(ctx context.Context) ([]*model.Order, error) <span class="cov8" title="1">{
+        // Пытаемся получить из кэша
+        cachedOrders := uc.cache.GetAll()
+        if len(cachedOrders) &gt; 0 </span><span class="cov8" title="1">{
+                return cachedOrders, nil
+        }</span>
+
+        // Если нет в кэше, загружаем из базы
+        <span class="cov8" title="1">orders, err := uc.repo.FindAll(ctx)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to fetch orders: %w", err)
+        }</span>
+
+        // Сохраняем все заказы в кэш
+        <span class="cov8" title="1">for _, order := range orders </span><span class="cov8" title="1">{
+                if order != nil </span><span class="cov8" title="1">{
+                        uc.cache.Set(order.OrderUID, order)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return orders, nil</span>
+}
+
+func (uc *orderUseCase) ValidateOrder(order *model.Order) error <span class="cov8" title="1">{
+        if order.OrderUID == "" </span><span class="cov8" title="1">{
+                return errors.New("order uid is required")
+        }</span>
+        <span class="cov8" title="1">if order.TrackNumber == "" </span><span class="cov8" title="1">{
+                return errors.New("track number is required")
+        }</span>
+        <span class="cov8" title="1">if order.Entry == "" </span><span class="cov8" title="1">{
+                return errors.New("entry is required")
+        }</span>
+        <span class="cov8" title="1">if order.CustomerID == "" </span><span class="cov8" title="1">{
+                return errors.New("customer id is required")
+        }</span>
+        <span class="cov8" title="1">if len(order.Items) == 0 </span><span class="cov8" title="1">{
+                return errors.New("items are required")
+        }</span>
+        <span class="cov8" title="1">if order.Payment.Transaction == "" </span><span class="cov8" title="1">{
+                return errors.New("payment transaction is required")
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+func (uc *orderUseCase) HealthCheck(ctx context.Context) (map[string]interface{}, error) <span class="cov8" title="1">{
+        health := map[string]any{
+                "status":       "healthy",
+                "cache_size":   uc.cache.Size(),
+                "cache_loaded": uc.cache.Size() &gt; 0,
+                "timestamp":    time.Now().Format(time.RFC3339),
+        }
+
+        // Проверяем подключение к базе данных
+        _, err := uc.repo.FindAll(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                health["status"] = "unhealthy"
+                health["database_error"] = err.Error()
+                return health, err
+        }</span>
+
+        <span class="cov8" title="1">health["database"] = "connected"
+        return health, nil</span>
+}
+
+func (uc *orderUseCase) Shutdown() <span class="cov8" title="1">{
+        close(uc.producerChan)
+        uc.wg.Wait()
+        log.Printf("all workers stopped")
+}</span>
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package cache
+
+import (
+        "shop-microservice/internal/domain/model"
+        "shop-microservice/internal/domain/repositories"
+)
+
+type CacheAdapter struct {
+        cache *Cache
+}
+
+// NewCacheAdapter - функция создает адаптер
+func NewCacheAdapter(cache *Cache) repositories.Cache <span class="cov8" title="1">{
+        return &amp;CacheAdapter{cache: cache}
+}</span>
+
+func (ca *CacheAdapter) Set(uid string, order *model.Order) <span class="cov8" title="1">{
+        (*ca.cache).Set(uid, order)
+}</span>
+
+func (ca *CacheAdapter) Get(uid string) (*model.Order, bool) <span class="cov8" title="1">{
+        return (*ca.cache).Get(uid)
+}</span>
+
+func (ca *CacheAdapter) GetAll() []*model.Order <span class="cov8" title="1">{
+        return (*ca.cache).GetAll()
+}</span>
+
+func (ca *CacheAdapter) Delete(uid string) <span class="cov8" title="1">{
+        (*ca.cache).Delete(uid)
+}</span>
+
+func (ca *CacheAdapter) Size() int <span class="cov8" title="1">{
+        return (*ca.cache).Size()
+}</span>
+
+func (ca *CacheAdapter) Clear() <span class="cov8" title="1">{
+        (*ca.cache).Clear()
+}</span>
+
+func (ca *CacheAdapter) WarmUp(repo repositories.OrderRepository) error <span class="cov8" title="1">{
+        return (*ca.cache).WarmUp(repo)
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package cache
+
+import (
+        "context"
+        "log"
         "shop-microservice/internal/domain/model"
         "shop-microservice/internal/domain/repositories"
 
-        "github.com/gin-gonic/gin"
-        "github.com/stretchr/testify/assert"
-        "github.com/stretchr/testify/mock"
+        "sync"
+        "time"
 )
 
-type MockOrderUseCase struct {
-        mock.Mock
+type Cache struct {
+        mu     sync.RWMutex
+        orders map[string]*model.Order
+        stats  map[string]cacheStats
 }
 
-func (m *MockOrderUseCase) CreateOrder(ctx context.Context, order *model.Order) error <span class="cov0" title="0">{
-        args := m.Called(ctx, order)
-        return args.Error(0)
+// исправить потом
+func (c *Cache) NewCacheAdapter(cache *Cache) repositories.Cache <span class="cov0" title="0">{
+        return c
 }</span>
 
-func (m *MockOrderUseCase) GetOrderByID(ctx context.Context, id string) (*model.Order, error) <span class="cov0" title="0">{
-        args := m.Called(ctx, id)
-        if args.Get(0) == nil </span><span class="cov0" title="0">{
-                return nil, args.Error(1)
+type cacheStats struct {
+        lastAccess  time.Time
+        accessCount int
+}
+
+func NewCash() *Cache <span class="cov8" title="1">{
+        return &amp;Cache{
+                orders: make(map[string]*model.Order),
+                stats:  make(map[string]cacheStats),
+        }
+}</span>
+
+func (c *Cache) Set(uid string, order *model.Order) <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+        c.orders[uid] = order
+        c.stats[uid] = cacheStats{
+                lastAccess:  time.Now(),
+                accessCount: 0,
+        }
+}</span>
+
+func (c *Cache) Get(uid string) (*model.Order, bool) <span class="cov8" title="1">{
+        c.mu.RLock()
+        defer c.mu.RUnlock()
+
+        order, exists := c.orders[uid]
+        if exists </span><span class="cov8" title="1">{
+                stats := c.stats[uid]
+                stats.lastAccess = time.Now()
+                stats.accessCount++
+                c.stats[uid] = stats
         }</span>
-        <span class="cov0" title="0">return args.Get(0).(*model.Order), args.Error(1)</span>
+        <span class="cov8" title="1">return order, exists</span>
 }
 
-func (m *MockOrderUseCase) GetAllOrders(ctx context.Context) ([]*model.Order, error) <span class="cov0" title="0">{
-        args := m.Called(ctx)
-        return args.Get(0).([]*model.Order), args.Error(1)
+func (cache *Cache) GetAll() []*model.Order <span class="cov8" title="1">{
+        cache.mu.RLock()
+        defer cache.mu.RUnlock()
+
+        orders := make([]*model.Order, 0, len(cache.orders))
+        for _, order := range cache.orders </span><span class="cov8" title="1">{
+                orders = append(orders, order)
+        }</span>
+        <span class="cov8" title="1">return orders</span>
+}
+
+func (cache *Cache) Delete(uid string) <span class="cov8" title="1">{
+        cache.mu.Lock()
+        defer cache.mu.Unlock()
+        delete(cache.orders, uid)
 }</span>
 
-func (m *MockOrderUseCase) ValidateOrder(order *model.Order) error <span class="cov0" title="0">{
-        args := m.Called(order)
-        return args.Error(0)
+func (cache *Cache) Size() int <span class="cov8" title="1">{
+        cache.mu.RLock()
+        defer cache.mu.RUnlock()
+        return len(cache.orders)
 }</span>
 
-func (m *MockOrderUseCase) HealthCheck(ctx context.Context) (map[string]interface{}, error) <span class="cov0" title="0">{
-        args := m.Called(ctx)
-        return args.Get(0).(map[string]interface{}), args.Error(1)
+func (cache *Cache) Clear() <span class="cov8" title="1">{
+        cache.mu.Lock()
+        defer cache.mu.Unlock()
+        cache.orders = make(map[string]*model.Order)
 }</span>
 
-func (m *MockOrderUseCase) Shutdown() <span class="cov0" title="0">{
-        m.Called()
-}</span>
+// WarmUp заполняет кэш данными из репозитория при старте сервиса
+func (cache *Cache) WarmUp(repo repositories.OrderRepository) error <span class="cov8" title="1">{
+        start := time.Now()
 
-func TestHandler_CreateOrder_Success(t *testing.T) <span class="cov0" title="0">{
-        // Setup
-        mockUseCase := new(MockOrderUseCase)
-        handler := handlers.NewHandler(mockUseCase)
+        ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+        defer cancel()
 
-        // Test data
-        order := model.Order{
-                OrderUID:    "test123",
-                TrackNumber: "WBILMTESTTRACK",
-                Entry:       "WBIL",
-                CustomerID:  "test",
-                DateCreated: time.Now(),
-                Delivery: model.Delivery{
-                        Name:    "Test Testov",
-                        Phone:   "+9720000000",
-                        Zip:     "2639809",
-                        City:    "Kiryat Mozkin",
-                        Address: "Ploshad Mira 15",
-                        Region:  "Kraiot",
-                        Email:   "test@gmail.com",
-                },
-                Payment: model.Payment{
-                        Transaction:  "test123",
-                        Currency:     "USD",
-                        Provider:     "wbpay",
-                        Amount:       1817,
-                        PaymentDt:    1637907727,
-                        Bank:         "alpha",
-                        DeliveryCost: 1500,
-                        GoodsTotal:   317,
-                        CustomFee:    0,
-                },
-                Items: []model.Item{
-                        {
-                                ChrtID:      9934930,
-                                TrackNumber: "WBILMTESTTRACK",
-                                Price:       453,
-                                Rid:         "ab4219087a764ae0btest",
-                                Name:        "Mascaras",
-                                Sale:        30,
-                                Size:        "0",
-                                TotalPrice:  317,
-                                NmID:        2389212,
-                                Brand:       "Vivienne Sabo",
-                                Status:      202,
-                        },
-                },
+        orders, err := repo.FindAll(ctx)
+        if err != nil </span><span class="cov8" title="1">{
+                return err
+        }</span>
+
+        <span class="cov8" title="1">cache.mu.Lock()
+        defer cache.mu.Unlock()
+
+        // Очищаем текущий кэш перед заполнением
+        cache.orders = make(map[string]*model.Order)
+
+        for _, order := range orders </span><span class="cov8" title="1">{
+                if order != nil </span><span class="cov8" title="1">{
+                        cache.orders[order.OrderUID] = order
+                }</span>
         }
 
-        // Expectations
-        mockUseCase.On("ValidateOrder", mock.Anything).Return(nil)
-        mockUseCase.On("CreateOrder", mock.Anything, mock.Anything).Return(nil)
-
-        // Execute
-        w := httptest.NewRecorder()
-        c, _ := gin.CreateTestContext(w)
-        jsonData, _ := json.Marshal(order)
-        c.Request = httptest.NewRequest("POST", "/orders", bytes.NewReader(jsonData))
-        c.Request.Header.Set("Content-Type", "application/json")
-
-        handler.CreateOrder(c)
-
-        // Verify
-        assert.Equal(t, http.StatusCreated, w.Code)
-        mockUseCase.AssertExpectations(t)
-}</span>
-
-func TestHandler_GetOrderByID_Success(t *testing.T) <span class="cov0" title="0">{
-        mockUseCase := new(MockOrderUseCase)
-        handler := handlers.NewHandler(mockUseCase)
-
-        expectedOrder := &amp;model.Order{
-                OrderUID:    "test123",
-                TrackNumber: "WBILMTESTTRACK",
-        }
-
-        mockUseCase.On("GetOrderByID", mock.Anything, "test123").Return(expectedOrder, nil)
-
-        w := httptest.NewRecorder()
-        c, _ := gin.CreateTestContext(w)
-        c.Params = gin.Params{gin.Param{Key: "id", Value: "test123"}}
-        c.Request = httptest.NewRequest("GET", "/orders/test123", nil)
-
-        handler.GetOrderByID(c)
-
-        assert.Equal(t, http.StatusOK, w.Code)
-        mockUseCase.AssertExpectations(t)
-}</span>
-
-func TestHandler_GetOrderByID_NotFound(t *testing.T) <span class="cov0" title="0">{
-        mockUseCase := new(MockOrderUseCase)
-        handler := handlers.NewHandler(mockUseCase)
-
-        mockUseCase.On("GetOrderByID", mock.Anything, "nonexistent").Return(nil, repositories.ErrOrderNotFound)
-
-        w := httptest.NewRecorder()
-        c, _ := gin.CreateTestContext(w)
-        c.Params = gin.Params{gin.Param{Key: "id", Value: "nonexistent"}}
-        c.Request = httptest.NewRequest("GET", "/orders/nonexistent", nil)
-
-        handler.GetOrderByID(c)
-
-        assert.Equal(t, http.StatusNotFound, w.Code)
-        mockUseCase.AssertExpectations(t)
-}</span>
+        <span class="cov8" title="1">log.Printf("Cache warm-up completed. Loaded %d orders in %v", len(orders), time.Since(start))
+        return nil</span>
+}
 </pre>
 		
 		</div>

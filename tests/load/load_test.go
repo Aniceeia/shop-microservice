@@ -1,3 +1,5 @@
+//go:build load
+
 package load
 
 import (
@@ -5,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -20,8 +23,20 @@ func TestLoadCreateOrders(t *testing.T) {
 	totalRequests := 0
 	failedRequests := 0
 
-	// Load test data
-	files, err := os.ReadDir("tests/fixtures/orders")
+	tryPaths := []string{
+		filepath.Clean(filepath.Join("..", "fixtures", "orders")),
+		filepath.Clean(filepath.Join("tests", "fixtures", "orders")),
+	}
+	var fixturesDir string
+	var files []os.DirEntry
+	var err error
+	for _, p := range tryPaths {
+		files, err = os.ReadDir(p)
+		if err == nil {
+			fixturesDir = p
+			break
+		}
+	}
 	if err != nil {
 		t.Fatalf("Failed to read fixtures: %v", err)
 	}
@@ -41,7 +56,7 @@ func TestLoadCreateOrders(t *testing.T) {
 				fileIndex := (workerID*requestsPerWorker + j) % len(files)
 				file := files[fileIndex]
 
-				data, err := os.ReadFile("tests/fixtures/orders/" + file.Name())
+				data, err := os.ReadFile(filepath.Join(fixturesDir, file.Name()))
 				if err != nil {
 					mu.Lock()
 					failedRequests++

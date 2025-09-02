@@ -1,0 +1,75 @@
+{
+  "order_uid": "test712162",
+  "track_number": "WBILM23467",
+  "entry": "WBIL",
+  "delivery": {
+    "name": "Test User27",
+    "phone": "+972628921268",
+    "zip": "4764274",
+    "city": "Test City",
+    "address": "Test Address 76",
+    "region": "Test Region",
+    "email": "test852@gmail.com"
+  },
+  "payment": {
+    "transaction": "test712162",
+    "request_id": "",
+    "currency": "USD",
+    "provider": "wbpay",
+    "amount": 3348,
+    "payment_dt": 1756812987,
+    "bank": "alpha",
+    "delivery_cost": 288,
+    "goods_total": 3060,
+    "custom_fee": 0
+  },
+  "items": [
+    {
+      "chrt_id": 8040122,
+      "track_number": "WBILM23467",
+      "price": 450,
+      "rid": "rid464599",
+      "name": "Product 1",
+      "sale": 37,
+      "size": "0",
+      "total_price": 741,
+      "nm_id": 178471,
+      "brand": "Test Brand",
+      "status": 202
+    },
+    {
+      "chrt_id": 4607350,
+      "track_number": "WBILM23467",
+      "price": 517,
+      "rid": "rid54962",
+      "name": "Product 2",
+      "sale": 36,
+      "size": "0",
+      "total_price": 591,
+      "nm_id": 494472,
+      "brand": "Test Brand",
+      "status": 202
+    },
+    {
+      "chrt_id": 5156984,
+      "track_number": "WBILM23467",
+      "price": 317,
+      "rid": "rid938183",
+      "name": "Product 3",
+      "sale": 20,
+      "size": "0",
+      "total_price": 711,
+      "nm_id": 160004,
+      "brand": "Test Brand",
+      "status": 202
+    }
+  ],
+  "locale": "en",
+  "internal_signature": "",
+  "customer_id": "customer492",
+  "delivery_service": "meest",
+  "shardkey": "1",
+  "sm_id": 16,
+  "date_created": "2025-09-02T14:36:27+03:00",
+  "oof_shard": "1"
+}
