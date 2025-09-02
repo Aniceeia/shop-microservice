@@ -22,6 +22,11 @@ type MockOrderUseCase struct {
 	mock.Mock
 }
 
+func (m *MockOrderUseCase) GetMetrics() map[string]interface{} {
+	args := m.Called()
+	return args.Get(0).(map[string]interface{})
+}
+
 func (m *MockOrderUseCase) CreateOrder(ctx context.Context, order *model.Order) error {
 	args := m.Called(ctx, order)
 	return args.Error(0)

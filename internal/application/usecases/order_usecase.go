@@ -23,12 +23,14 @@ type OrderUseCase interface {
 	ValidateOrder(order *model.Order) error
 	HealthCheck(ctx context.Context) (map[string]interface{}, error)
 	Shutdown()
+	GetMetrics() map[string]interface{}
 }
 
 type orderUseCase struct {
 	repo            repositories.OrderRepository
 	messageProducer repositories.MessageProducer
 	cache           repositories.Cache
+	metrics         repositories.Metrics
 	producerChan    chan *model.Order
 	workers         int
 	wg              sync.WaitGroup
@@ -38,6 +40,7 @@ func NewOrderUseCase(
 	repo repositories.OrderRepository,
 	messageProducer repositories.MessageProducer,
 	cache repositories.Cache,
+	metrics repositories.Metrics,
 	workers int,
 	bufferSize int,
 ) OrderUseCase {
@@ -52,11 +55,16 @@ func NewOrderUseCase(
 		repo:            repo,
 		messageProducer: messageProducer,
 		cache:           cache,
+		metrics:         metrics,
 		producerChan:    make(chan *model.Order, bufferSize),
 		workers:         workers,
 	}
 	uc.startWorkers()
 	return uc
+}
+
+func (uc *orderUseCase) GetMetrics() map[string]interface{} {
+	return uc.metrics.GetStats()
 }
 
 func (uc *orderUseCase) startWorkers() {
@@ -85,58 +93,47 @@ func (uc *orderUseCase) CreateOrder(ctx context.Context, order *model.Order) err
 		return err
 	}
 
-	// Сохраняем в кэш
 	uc.cache.Set(order.OrderUID, order)
 
-	// Сохраняем в базу данных
 	if err := uc.repo.Save(ctx, order); err != nil {
-		return fmt.Errorf("failed to save order: %w", err)
+		return err
 	}
 
-	// Отправляем в канал для асинхронной обработки
 	select {
 	case uc.producerChan <- order:
 		return nil
 	default:
-		return errors.New("channel is full, message dropped")
+		return ErrServerClosed
 	}
 }
 
 func (uc *orderUseCase) GetOrderByID(ctx context.Context, id string) (*model.Order, error) {
-	// Пытаемся получить из кэша
 	if order, exists := uc.cache.Get(id); exists {
 		return order, nil
 	}
 
-	// Если нет в кэше, ищем в базе
 	order, err := uc.repo.FindByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("order not found: %w", err)
+		return nil, err
 	}
 
-	// Сохраняем в кэш для будущих запросов
 	uc.cache.Set(id, order)
 	return order, nil
 }
 
 func (uc *orderUseCase) GetAllOrders(ctx context.Context) ([]*model.Order, error) {
-	// Пытаемся получить из кэша
 	cachedOrders := uc.cache.GetAll()
 	if len(cachedOrders) > 0 {
 		return cachedOrders, nil
 	}
 
-	// Если нет в кэше, загружаем из базы
 	orders, err := uc.repo.FindAll(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch orders: %w", err)
+		return nil, err
 	}
 
-	// Сохраняем все заказы в кэш
 	for _, order := range orders {
-		if order != nil {
-			uc.cache.Set(order.OrderUID, order)
-		}
+		uc.cache.Set(order.OrderUID, order)
 	}
 
 	return orders, nil
@@ -152,14 +149,14 @@ func (uc *orderUseCase) ValidateOrder(order *model.Order) error {
 	if order.Entry == "" {
 		return errors.New("entry is required")
 	}
-	if order.CustomerID == "" {
-		return errors.New("customer id is required")
+	if order.Delivery.Name == "" {
+		return errors.New("delivery name is required")
+	}
+	if order.Payment.Amount <= 0 {
+		return errors.New("payment amount must be positive")
 	}
 	if len(order.Items) == 0 {
-		return errors.New("items are required")
-	}
-	if order.Payment.Transaction == "" {
-		return errors.New("payment transaction is required")
+		return errors.New("order must have at least one item")
 	}
 	return nil
 }
@@ -167,20 +164,20 @@ func (uc *orderUseCase) ValidateOrder(order *model.Order) error {
 func (uc *orderUseCase) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
 	health := map[string]any{
 		"status":       "healthy",
+		"timestamp":    time.Now().Unix(),
 		"cache_size":   uc.cache.Size(),
-		"cache_loaded": uc.cache.Size() > 0,
-		"timestamp":    time.Now().Format(time.RFC3339),
+		"workers":      uc.workers,
+		"queue_size":   len(uc.producerChan),
+		"cap":          cap(uc.producerChan),
+		"db_connected": true,
 	}
 
-	// Проверяем подключение к базе данных
-	_, err := uc.repo.FindAll(ctx)
-	if err != nil {
+	if len(uc.producerChan) >= cap(uc.producerChan) {
 		health["status"] = "unhealthy"
-		health["database_error"] = err.Error()
-		return health, err
+		health["error"] = "queue is full"
+		return health, fmt.Errorf("queue is full")
 	}
 
-	health["database"] = "connected"
 	return health, nil
 }
 

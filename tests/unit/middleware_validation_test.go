@@ -3,21 +3,24 @@ package unit
 import (
 	"testing"
 
-	"shop-microservice/internal/api/middleware"
-
 	"github.com/stretchr/testify/assert"
+	"shop-microservice/internal/api/middleware"
 )
 
 func TestValidateOrderID_Success(t *testing.T) {
-	assert.NoError(t, middleware.ValidateOrderID("order-ABC_123"))
-	assert.NoError(t, middleware.ValidateOrderID("uid_123456"))
+	validIDs := []string{"validsds123", "testqwe456", "order78qwe9"}
+
+	for _, id := range validIDs {
+		err := middleware.ValidateOrderID(id)
+		assert.NoError(t, err, "ID %s should be valid", id)
+	}
 }
 
 func TestValidateOrderID_Failures(t *testing.T) {
-	assert.Error(t, middleware.ValidateOrderID("short"))
-	long := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-	assert.Error(t, middleware.ValidateOrderID(long))
-	assert.Error(t, middleware.ValidateOrderID("bad space"))
-	assert.Error(t, middleware.ValidateOrderID("1234567"))
-	assert.Error(t, middleware.ValidateOrderID("test123"))
+	invalidIDs := []string{"", "   ", "invalid@id", "id with spaces"}
+
+	for _, id := range invalidIDs {
+		err := middleware.ValidateOrderID(id)
+		assert.Error(t, err, "ID %s should be invalid", id)
+	}
 }

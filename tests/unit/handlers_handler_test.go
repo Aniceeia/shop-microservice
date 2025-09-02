@@ -25,6 +25,7 @@ func (m *hcMockUseCase) CreateOrder(ctx context.Context, order *model.Order) err
 	args := m.Called(ctx, order)
 	return args.Error(0)
 }
+
 func (m *hcMockUseCase) GetOrderByID(ctx context.Context, id string) (*model.Order, error) {
 	args := m.Called(ctx, id)
 	if args.Get(0) == nil {
@@ -32,6 +33,7 @@ func (m *hcMockUseCase) GetOrderByID(ctx context.Context, id string) (*model.Ord
 	}
 	return args.Get(0).(*model.Order), args.Error(1)
 }
+
 func (m *hcMockUseCase) GetAllOrders(ctx context.Context) ([]*model.Order, error) {
 	args := m.Called(ctx)
 	if args.Get(0) == nil {
@@ -39,12 +41,20 @@ func (m *hcMockUseCase) GetAllOrders(ctx context.Context) ([]*model.Order, error
 	}
 	return args.Get(0).([]*model.Order), args.Error(1)
 }
+
 func (m *hcMockUseCase) ValidateOrder(order *model.Order) error { return nil }
-func (m *hcMockUseCase) HealthCheck(ctx context.Context) (map[string]interface{}, error) {
+
+func (m *hcMockUseCase) HealthCheck(ctx context.Context) (map[string]any, error) {
 	args := m.Called(ctx)
-	return args.Get(0).(map[string]interface{}), args.Error(1)
+	return args.Get(0).(map[string]any), args.Error(1)
 }
+
 func (m *hcMockUseCase) Shutdown() { m.Called() }
+
+func (m *hcMockUseCase) GetMetrics() map[string]any {
+	args := m.Called()
+	return args.Get(0).(map[string]any)
+}
 
 func makeOrder() model.Order {
 	return model.Order{
@@ -107,7 +117,7 @@ func TestHandler_GetAllOrders_Error(t *testing.T) {
 func TestHandler_HealthCheck_ServiceUnavailable(t *testing.T) {
 	m := new(hcMockUseCase)
 	h := handlers.NewHandler(m)
-	m.On("HealthCheck", mock.Anything).Return(map[string]interface{}{"status": "unhealthy"}, errors.New("x"))
+	m.On("HealthCheck", mock.Anything).Return(map[string]any{"status": "unhealthy"}, errors.New("x"))
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
@@ -115,4 +125,35 @@ func TestHandler_HealthCheck_ServiceUnavailable(t *testing.T) {
 
 	h.HealthCheck(c)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+}
+
+func TestHandler_GetMetrics(t *testing.T) {
+	m := new(hcMockUseCase)
+	h := handlers.NewHandler(m)
+
+	expectedMetrics := map[string]interface{}{
+		"errors":             map[string]interface{}{"/test": float64(1)},
+		"requests":           map[string]interface{}{"/test": float64(5)},
+		"cache_hits":         float64(0),
+		"cache_misses":       float64(0),
+		"db_connections":     float64(0),
+		"kafka_messages":     float64(0),
+		"avg_response_times": map[string]interface{}{},
+	}
+	m.On("GetMetrics").Return(expectedMetrics)
+
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+	c.Request = httptest.NewRequest("GET", "/api/metrics", nil)
+
+	h.GetMetrics(c)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response map[string]any
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedMetrics, response)
+
+	m.AssertExpectations(t)
 }

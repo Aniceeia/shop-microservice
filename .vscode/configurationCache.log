@@ -1,1 +1,0 @@
-{"buildTargets":["down","frontend-test","generate-test-data","logs","test","test-coverage","test-load","test-unit","up"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}

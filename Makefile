@@ -1,7 +1,7 @@
 .PHONY: test test-unit test-load test-coverage generate-test-data
 
 PACKAGES := $(shell go list ./... | grep -v \/tests | grep -v \/internal\/infrastructure\/kafka | grep -v \/internal\/infrastructure\/postgresql | grep -v \/internal\/di)
-COVERPKG := $(shell echo $(PACKAGES) | tr ' ' ',')
+COVERPKG=shop-microservice/internal/api,shop-microservice/internal/api/handlers,shop-microservice/internal/api/middleware,shop-microservice/internal/application/usecases,shop-microservice/internal/domain/model,shop-microservice/internal/domain/repositories,shop-microservice/internal/infrastructure/cache,shop-microservice/internal/infrastructure/logger,shop-microservice/internal/infrastructure/metrics,shop-microservice/internal/di
 
 generate-test-data:
 	go run tests/generate_data.go
@@ -20,12 +20,6 @@ test-coverage:
 
 test: test-unit  test-coverage
 
-# Frontend test button (add to your index.html)
-frontend-test:
-	@echo "Add test button to frontend:"
-	@echo '<button onclick="runTests()">Run Tests</button>'
-	@echo '<script>function runTests() { fetch("/api/test").then(r => r.json()).then(console.log) }</script>'
-
 up:
 	docker-compose -f docker/docker-compose.yml up --build
 
@@ -34,3 +28,6 @@ down:
 
 logs:
 	docker-compose -f docker/docker-compose.yml logs -f app
+
+clean:
+	rm -rf coverage.html *.out

@@ -13,8 +13,10 @@ import (
 	"shop-microservice/internal/application/usecases"
 	"shop-microservice/internal/domain/model"
 	"shop-microservice/internal/domain/repositories"
-	"shop-microservice/internal/infrastructure/cache"
+	cachepkg "shop-microservice/internal/infrastructure/cache"
 	"shop-microservice/internal/infrastructure/kafka"
+	"shop-microservice/internal/infrastructure/logger"
+	"shop-microservice/internal/infrastructure/metrics"
 	"shop-microservice/internal/infrastructure/postgresql"
 	"strconv"
 	"strings"
@@ -34,6 +36,7 @@ var Module = fx.Options(
 		NewOrderRepository,
 		NewCache,
 		NewCacheAdapter,
+		fx.Annotate(NewMetrics, fx.As(new(repositories.Metrics))), NewLogger,
 		NewOrderUseCase,
 		NewHandler,
 		NewRouter,
@@ -60,21 +63,21 @@ type Config struct {
 }
 
 func NewConfig() (*Config, error) {
-	dbPort, err := strconv.Atoi(getEnv("DB_PORT", "5432"))
+	dbPort, err := strconv.Atoi(GetEnv("DB_PORT", "5432"))
 	if err != nil {
 		return nil, fmt.Errorf("invalid DB_PORT: %w", err)
 	}
 
 	return &Config{
-		DBHost:       getEnv("DB_HOST", "postgres"),
+		DBHost:       GetEnv("DB_HOST", "postgres"),
 		DBPort:       dbPort,
-		DBUser:       getEnv("DB_USER", "orders_user"),
-		DBPassword:   getEnv("DB_PASSWORD", "orders_password"),
-		DBName:       getEnv("DB_NAME", "orders_db"),
-		AppPort:      getEnv("APP_PORT", "8081"),
-		KafkaBrokers: strings.Split(getEnv("KAFKA_BROKERS", "kafka:9092"), ","),
-		KafkaTopic:   getEnv("KAFKA_TOPIC", "orders"),
-		KafkaGroupID: getEnv("KAFKA_GROUP_ID", "order-service"),
+		DBUser:       GetEnv("DB_USER", "orders_user"),
+		DBPassword:   GetEnv("DB_PASSWORD", "orders_password"),
+		DBName:       GetEnv("DB_NAME", "orders_db"),
+		AppPort:      GetEnv("APP_PORT", "8081"),
+		KafkaBrokers: strings.Split(GetEnv("KAFKA_BROKERS", "kafka:9092"), ","),
+		KafkaTopic:   GetEnv("KAFKA_TOPIC", "orders"),
+		KafkaGroupID: GetEnv("KAFKA_GROUP_ID", "order-service"),
 	}, nil
 }
 
@@ -113,23 +116,33 @@ func NewOrderRepository(db *sql.DB) *postgresql.OrderRepository {
 	return postgresql.NewOrderRepository(db)
 }
 
-func NewCache() *cache.Cache {
-	return cache.NewCash()
+func NewCache() *cachepkg.Cache {
+	return cachepkg.NewCash(1000, 30*time.Minute)
 }
 
-func NewCacheAdapter(cache *cache.Cache) repositories.Cache {
-	return cache.NewCacheAdapter(cache)
+func NewCacheAdapter(cache *cachepkg.Cache) repositories.Cache {
+	return cache
+}
+
+func NewMetrics() *metrics.Metrics {
+	return metrics.NewMetrics()
+}
+
+func NewLogger() *logger.Logger {
+	return logger.NewLogger(logger.INFO)
 }
 
 func NewOrderUseCase(
 	repo *postgresql.OrderRepository,
 	messageProducer repositories.MessageProducer,
 	cache repositories.Cache,
+	metrics repositories.Metrics,
 ) usecases.OrderUseCase {
 	return usecases.NewOrderUseCase(
 		repo,
 		messageProducer,
 		cache,
+		metrics,
 		3,
 		1000,
 	)
@@ -168,13 +181,19 @@ func WarmUpCache(cache repositories.Cache, repo *postgresql.OrderRepository, lc 
 			log.Printf("Cache initialized with %d orders", cache.Size())
 			return nil
 		},
+		OnStop: func(ctx context.Context) error {
+			if c, ok := cache.(*cachepkg.Cache); ok {
+				c.Stop()
+			}
+			return nil
+		},
 	})
 }
 
 func StartKafkaConsumer(
 	cfg *Config,
 	repo *postgresql.OrderRepository,
-	cache *cache.Cache,
+	cache *cachepkg.Cache,
 	km *kafka.KafkaManager,
 	lc fx.Lifecycle,
 ) {
@@ -252,7 +271,7 @@ func RegisterHooks(
 	})
 }
 
-func getEnv(key, defaultValue string) string {
+func GetEnv(key, defaultValue string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		return defaultValue

@@ -4,7 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+	"math"
 	"strings"
+	"time"
 
 	"shop-microservice/internal/domain/model"
 )
@@ -19,6 +22,33 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 
 func errFail(format string, args ...any) error {
 	return fmt.Errorf(format, args...)
+}
+
+func (r *OrderRepository) withRetry(ctx context.Context, operation func() error) error {
+	maxRetries := 3
+	baseDelay := 100 * time.Millisecond
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		err := operation()
+		if err == nil {
+			return nil
+		}
+
+		if attempt == maxRetries-1 {
+			return err
+		}
+
+		delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
+		log.Printf("Database operation failed, retrying in %v: %v", delay, err)
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+			continue
+		}
+	}
+	return nil
 }
 
 // Save - saves order, delivery, payment, items

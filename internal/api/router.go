@@ -26,6 +26,7 @@ func SetupRouter(handler *handlers.Handler) *gin.Engine {
 		api.GET("/orders", handler.GetAllOrders)
 		api.GET("/health", handler.HealthCheck)
 		api.GET("/test", handler.RunTests)
+		api.GET("/metrics", handler.GetMetrics)
 	}
 
 	return router

@@ -8,6 +8,9 @@ require (
 	github.com/segmentio/kafka-go v0.4.49
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/fx v1.24.0
+	github.com/swaggo/swag v1.16.3
+	github.com/swaggo/gin-swagger v1.6.0
+	github.com/swaggo/files v1.0.1
 )
 
 require (

@@ -99,6 +99,19 @@ func (h *Handler) RunTests(c *gin.Context) {
 	})
 }
 
+// GetMetrics godoc
+// @Summary Get service metrics
+// @Description Retrieve service performance metrics
+// @Tags metrics
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Router /api/metrics [get]
+func (h *Handler) GetMetrics(c *gin.Context) {
+	metrics := h.useCase.GetMetrics()
+	c.JSON(http.StatusOK, metrics)
+}
+
 func (h *Handler) Shutdown() {
 	h.useCase.Shutdown()
 }
