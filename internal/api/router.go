@@ -12,6 +12,8 @@ import (
 func SetupRouter(handler *handlers.Handler) *gin.Engine {
 	router := gin.Default()
 
+	router.Use(middleware.PrometheusMiddleware())
+
 	_, filename, _, _ := runtime.Caller(0)
 	rootDir := filepath.Join(filepath.Dir(filename), "../static")
 	router.Static("/static", rootDir)
@@ -22,11 +24,10 @@ func SetupRouter(handler *handlers.Handler) *gin.Engine {
 	api := router.Group("/api")
 	{
 		api.POST("/orders", handler.CreateOrder)
-		api.GET("/orders/:id", middleware.ValidateOrderIDMiddleware(), handler.GetOrderByID)
 		api.GET("/orders", handler.GetAllOrders)
 		api.GET("/health", handler.HealthCheck)
-		api.GET("/test", handler.RunTests)
-		api.GET("/metrics", handler.GetMetrics)
+		api.GET("/orders/:id", middleware.ValidateOrderIDMiddleware(), handler.GetOrderByID)
+		router.GET("/metrics", middleware.GetPrometheusMetrics)
 	}
 
 	return router

@@ -37,6 +37,6 @@ func (ca *CacheAdapter) Clear() {
 	ca.cache.Clear()
 }
 
-func (ca *CacheAdapter) WarmUp(repo repositories.OrderRepository) error {
-	return ca.cache.WarmUp(repo)
+func (ca *CacheAdapter) PreloadCacheFromDB(repo repositories.OrderRepository) error {
+	return ca.cache.PreloadCacheFromDB(repo)
 }

@@ -141,17 +141,15 @@ func generateTestData(count int, outputDir string) error {
 }
 
 func main() {
-	// Create fixtures directory
 	err := os.MkdirAll("tests/fixtures/orders", 0755)
 	if err != nil {
 		panic(err)
 	}
 
-	// Generate test data
-	err = generateTestData(1000, "tests/fixtures/orders")
+	err = generateTestData(100000, "tests/fixtures/orders")
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Generated 1000 test orders in tests/fixtures/orders/")
+	fmt.Println("Generated 100000 test orders in tests/fixtures/orders/")
 }

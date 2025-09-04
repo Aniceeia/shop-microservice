@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -11,7 +12,6 @@ import (
 
 	"shop-microservice/internal/api/handlers"
 	"shop-microservice/internal/domain/model"
-	"shop-microservice/internal/domain/repositories"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -152,7 +152,7 @@ func TestHandler_GetOrderByID_NotFound(t *testing.T) {
 	mockUseCase := new(MockOrderUseCase)
 	handler := handlers.NewHandler(mockUseCase)
 
-	mockUseCase.On("GetOrderByID", mock.Anything, "nonexistent").Return(nil, repositories.ErrOrderNotFound)
+	mockUseCase.On("GetOrderByID", mock.Anything, "nonexistent").Return(nil, fmt.Errorf("user not foud"))
 
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)

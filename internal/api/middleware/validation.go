@@ -25,12 +25,10 @@ func ValidateOrderID(orderID string) error {
 		return fmt.Errorf("order ID can only contain letters, numbers, underscores and hyphens")
 	}
 
-	// не менее 10
 	if strings.Contains(orderID, "test") && len(orderID) < 10 {
 		return fmt.Errorf("test order IDs should follow the pattern from test data")
 	}
 
-	//наличие только цифр (слишком простой ID)
 	if isAllDigits(orderID) {
 		return fmt.Errorf("order ID should not consist only of digits")
 	}

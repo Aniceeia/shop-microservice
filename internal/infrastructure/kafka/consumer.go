@@ -3,7 +3,6 @@ package kafka
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -56,29 +55,28 @@ func (c *Consumer) Consume(ctx context.Context, handler MessageHandler) error {
 		default:
 			msg, err := c.reader.ReadMessage(ctx)
 			if err != nil {
-				return fmt.Errorf("failed to read message: %w", err)
+				return errFail("failed to read message: %w", err)
 			}
 
 			if err := handler(string(msg.Key), msg.Value); err != nil {
-				log.Printf("Error handling message: %v", err)
-				// Продолжаем обработку следующих сообщений
+				errFail("Error handling message: %v", err)
 				continue
 			}
 
-			log.Printf("Consumed message: topic=%s key=%s", c.topic, string(msg.Key))
+			kafkaLog("Consumed message: topic=%s key=%s", c.topic, string(msg.Key))
 		}
 	}
-}
-
-func (c *Consumer) Close() error {
-	return c.reader.Close()
 }
 
 func (c *Consumer) ConsumeJSON(ctx context.Context, handler func(key string, value interface{}) error, target interface{}) error {
 	return c.Consume(ctx, func(key string, value []byte) error {
 		if err := json.Unmarshal(value, target); err != nil {
-			return fmt.Errorf("failed to unmarshal JSON: %w", err)
+			return errFail("failed to unmarshal JSON: %w", err)
 		}
 		return handler(key, target)
 	})
+}
+
+func (c *Consumer) Close() error {
+	return c.reader.Close()
 }

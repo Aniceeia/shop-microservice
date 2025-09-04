@@ -1,5 +1,3 @@
-//go:build load
-
 package load
 
 import (
@@ -15,12 +13,12 @@ import (
 
 func TestLoadCreateOrders(t *testing.T) {
 	baseURL := "http://localhost:8081"
-	concurrency := 50
-	requestsPerWorker := 20
+	concurrency := 500
+	requestsTotal := 100000
 
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	totalRequests := 0
+	processedRequests := 0
 	failedRequests := 0
 
 	tryPaths := []string{
@@ -45,21 +43,30 @@ func TestLoadCreateOrders(t *testing.T) {
 		t.Fatal("No test data found")
 	}
 
+	fmt.Printf("Found %d fixture files\n", len(files))
+
 	startTime := time.Now()
+
+	workChan := make(chan int, requestsTotal)
+	for i := 0; i < requestsTotal; i++ {
+		workChan <- i
+	}
+	close(workChan)
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
 
-			for j := 0; j < requestsPerWorker; j++ {
-				fileIndex := (workerID*requestsPerWorker + j) % len(files)
+			for range workChan {
+				fileIndex := processedRequests % len(files)
 				file := files[fileIndex]
 
 				data, err := os.ReadFile(filepath.Join(fixturesDir, file.Name()))
 				if err != nil {
 					mu.Lock()
 					failedRequests++
+					processedRequests++
 					mu.Unlock()
 					continue
 				}
@@ -68,17 +75,19 @@ func TestLoadCreateOrders(t *testing.T) {
 				if err != nil {
 					mu.Lock()
 					failedRequests++
+					processedRequests++
 					mu.Unlock()
 					continue
 				}
 				resp.Body.Close()
 
 				mu.Lock()
-				totalRequests++
+				processedRequests++
+				currentCount := processedRequests
 				mu.Unlock()
 
-				if totalRequests%100 == 0 {
-					fmt.Printf("Processed %d requests\n", totalRequests)
+				if currentCount%5000 == 0 {
+					fmt.Printf("Processed %d requests\n", currentCount)
 				}
 			}
 		}(i)
@@ -87,13 +96,13 @@ func TestLoadCreateOrders(t *testing.T) {
 	wg.Wait()
 
 	duration := time.Since(startTime)
-	throughput := float64(totalRequests) / duration.Seconds()
+	throughput := float64(processedRequests) / duration.Seconds()
 
 	fmt.Printf("\n=== Load Test Results ===\n")
-	fmt.Printf("Total requests: %d\n", totalRequests)
+	fmt.Printf("Total requests: %d\n", processedRequests)
 	fmt.Printf("Failed requests: %d\n", failedRequests)
 	fmt.Printf("Duration: %v\n", duration)
 	fmt.Printf("Throughput: %.2f requests/second\n", throughput)
 	fmt.Printf("Success rate: %.2f%%\n",
-		float64(totalRequests-failedRequests)/float64(totalRequests)*100)
+		float64(processedRequests-failedRequests)/float64(processedRequests)*100)
 }

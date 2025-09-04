@@ -30,4 +30,4 @@ logs:
 	docker-compose -f docker/docker-compose.yml logs -f app
 
 clean:
-	rm -rf coverage.html *.out
+	rm -rf coverage.html *.out tests/fixtures

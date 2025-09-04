@@ -1,13 +1,11 @@
 package unit
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 	"time"
 
 	"shop-microservice/internal/di"
-	"shop-microservice/internal/domain/model"
 	"shop-microservice/internal/infrastructure/cache"
 
 	"github.com/stretchr/testify/assert"
@@ -16,8 +14,6 @@ import (
 
 type mockDB struct{ mock.Mock }
 
-func (m *mockDB) Ping() error  { return m.Called().Error(0) }
-func (m *mockDB) Close() error { return m.Called().Error(0) }
 func (m *mockDB) Exec(query string, args ...interface{}) (sql.Result, error) {
 	callArgs := m.Called(append([]interface{}{query}, args...))
 	return callArgs.Get(0).(sql.Result), callArgs.Error(1)
@@ -29,28 +25,6 @@ func (m *mockDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
 func (m *mockDB) QueryRow(query string, args ...interface{}) *sql.Row {
 	callArgs := m.Called(append([]interface{}{query}, args...))
 	return callArgs.Get(0).(*sql.Row)
-}
-
-type mockKafkaManager struct{ mock.Mock }
-
-func (m *mockKafkaManager) WaitForKafka(timeout time.Duration) error {
-	return m.Called(timeout).Error(0)
-}
-func (m *mockKafkaManager) CreateTopicIfNotExists(topic string, partitions, replicationFactor int) error {
-	return m.Called(topic, partitions, replicationFactor).Error(0)
-}
-
-type mockKafkaProducer struct{ mock.Mock }
-
-func (m *mockKafkaProducer) Produce(key string, value []byte) error {
-	return m.Called(key, value).Error(0)
-}
-func (m *mockKafkaProducer) Close() { m.Called() }
-
-type mockKafkaMessageProducer struct{ mock.Mock }
-
-func (m *mockKafkaMessageProducer) ProduceOrder(ctx context.Context, order *model.Order) error {
-	return m.Called(ctx, order).Error(0)
 }
 
 func TestNewConfig(t *testing.T) {
@@ -159,11 +133,6 @@ func TestNewMetrics(t *testing.T) {
 	assert.IsType(t, float64(0), stats["cache_misses"])
 	assert.IsType(t, float64(0), stats["db_connections"])
 	assert.IsType(t, float64(0), stats["kafka_messages"])
-}
-
-func TestNewLogger(t *testing.T) {
-	logger := di.NewLogger()
-	assert.NotNil(t, logger)
 }
 
 func TestNewOrderUseCase(t *testing.T) {

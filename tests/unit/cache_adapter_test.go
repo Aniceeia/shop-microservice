@@ -37,7 +37,6 @@ func TestCacheAdapter_GetAll(t *testing.T) {
 
 type repoForWarmup struct {
 	mock.Mock
-	orders []*model.Order
 }
 
 func (r *repoForWarmup) Save(ctx context.Context, order *model.Order) error {

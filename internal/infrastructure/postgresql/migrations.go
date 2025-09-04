@@ -1,84 +1,57 @@
 package postgresql
 
 import (
-	"database/sql"
-	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
-func RunMigrations(db *sql.DB) error {
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+func RunMigrations(pool *pgxpool.Pool) error {
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	defer sqlDB.Close()
+
+	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
-		return fmt.Errorf("could not create migration driver: %w", err)
+		return errFail("create migration driver: %w", err)
 	}
 
-	projectRoot, err := getProjectRoot()
+	migrationsPath, err := findMigrationsPath()
 	if err != nil {
-		return fmt.Errorf("could not get project root: %w", err)
+		return errFail("find migrations: %w", err)
 	}
-
-	migrationsPath := fmt.Sprintf("file://%s/migrations", projectRoot)
 
 	m, err := migrate.NewWithDatabaseInstance(
-		migrationsPath,
+		parseInput("file://%s", filepath.ToSlash(migrationsPath)),
 		"postgres",
 		driver,
 	)
-
 	if err != nil {
-		return fmt.Errorf("could not create migration instance: %w", err)
+		return errFail("create migration instance: %w", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("could not run migrations: %w", err)
+		return errFail("run migrations: %w", err)
 	}
-
-	log.Println("Migrations applied successfully")
 	return nil
 }
 
-func getProjectRoot() (string, error) {
-	containerPaths := []string{
-		"/app",
-		"/migrations",
+func findMigrationsPath() (string, error) {
+	paths := []string{
+		"/app/migrations",
+		"./migrations",
+		"../migrations",
 	}
 
-	for _, path := range containerPaths {
-		migrationsDir := path
-		if path != "/migrations" {
-			migrationsDir = filepath.Join(path, "migrations")
-		}
-
-		if _, err := os.Stat(migrationsDir); err == nil {
-			if path == "/migrations" {
-				return "/", nil
-			}
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
 			return path, nil
 		}
 	}
 
-	currentDir, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	possibleLocalPaths := []string{
-		currentDir,
-		filepath.Join(currentDir, "..", ".."),
-	}
-
-	for _, path := range possibleLocalPaths {
-		migrationsDir := filepath.Join(path, "migrations")
-		if _, err := os.Stat(migrationsDir); err == nil {
-			return path, nil
-		}
-	}
-
-	return "", fmt.Errorf("migrations directory not found")
+	return "", errFail("migrations directory not found")
 }

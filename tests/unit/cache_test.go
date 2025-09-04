@@ -3,11 +3,11 @@ package unit
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
 	"shop-microservice/internal/domain/model"
-	"shop-microservice/internal/domain/repositories"
 	"shop-microservice/internal/infrastructure/cache"
 
 	"github.com/stretchr/testify/assert"
@@ -94,19 +94,9 @@ type mockOrderRepo struct{ orders []*model.Order }
 
 func (m *mockOrderRepo) Save(ctx context.Context, order *model.Order) error { return nil }
 func (m *mockOrderRepo) FindByID(ctx context.Context, uid string) (*model.Order, error) {
-	return nil, repositories.ErrOrderNotFound
+	return nil, fmt.Errorf("user not foud")
 }
 func (m *mockOrderRepo) FindAll(ctx context.Context) ([]*model.Order, error) {
 	time.Sleep(5 * time.Millisecond)
 	return m.orders, nil
-}
-
-type mockOrderRepoErr struct{}
-
-func (m *mockOrderRepoErr) Save(ctx context.Context, order *model.Order) error { return nil }
-func (m *mockOrderRepoErr) FindByID(ctx context.Context, uid string) (*model.Order, error) {
-	return nil, repositories.ErrOrderNotFound
-}
-func (m *mockOrderRepoErr) FindAll(ctx context.Context) ([]*model.Order, error) {
-	return nil, assert.AnError
 }
