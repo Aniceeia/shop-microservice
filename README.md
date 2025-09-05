@@ -7,10 +7,6 @@
 ## Быстрый старт
 
 ```bash
-# Клонирование репозитория
-git clone <repository-url>
-cd shop-microservice
-
 # Запуск сервисов
 make up
 
