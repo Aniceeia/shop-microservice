@@ -1,7 +1,7 @@
 .PHONY: test test-unit test-load test-coverage generate-test-data
 
-PACKAGES := $(shell go list ./... | grep -v \/tests | grep -v \/internal\/infrastructure\/kafka | grep -v \/internal\/infrastructure\/postgresql | grep -v \/internal\/di)
-COVERPKG=shop-microservice/internal/api,shop-microservice/internal/api/handlers,shop-microservice/internal/api/middleware,shop-microservice/internal/application/usecases,shop-microservice/internal/domain/model,shop-microservice/internal/domain/repositories,shop-microservice/internal/infrastructure/cache,shop-microservice/internal/infrastructure/logger,shop-microservice/internal/infrastructure/metrics,shop-microservice/internal/di
+PACKAGES := $(shell go list ./... | grep -v \/tests )
+COVERPKG=shop-microservice/internal/infrastructure/cache,shop-microservice/internal/infrastructure/kafka
 
 generate-test-data:
 	go run tests/generate_data.go
@@ -20,10 +20,12 @@ test-coverage:
 
 test: test-unit  test-coverage
 
-up:
+up: 
 	docker-compose -f docker/docker-compose.yml up --build
+	
 
 down:
+
 	docker-compose -f docker/docker-compose.yml down -v
 
 logs:

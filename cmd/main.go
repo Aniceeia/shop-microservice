@@ -13,49 +13,42 @@ import (
 	"go.uber.org/fx"
 )
 
-// @title Shop Microservice API
-// @version 1.0
-// @description Microservice for order management with Kafka, PostgreSQL and caching
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.url http://www.swagger.io/support
-// @contact.email support@swagger.io
-
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host localhost:8081
-// @BasePath /api
-
-// @tag.name orders
-// @tag.description Order management operations
-
-// @tag.name health
-// @tag.description Health check endpoints
-
-// @tag.name tests
-// @tag.description System test endpoints
 func main() {
-	app := fx.New(di.Module)
+	app := createApp()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	if err := app.Start(ctx); err != nil {
+	if err := startApp(app); err != nil {
 		log.Fatal("Failed to start application:", err)
 	}
 
+	waitForShutdownSignal()
+
+	if err := stopApp(app); err != nil {
+		log.Fatal("Failed to stop application:", err)
+	}
+}
+
+func createApp() *fx.App {
+	return fx.New(di.Module)
+}
+
+func startApp(app *fx.App) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	return app.Start(ctx)
+}
+
+func stopApp(app *fx.App) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return app.Stop(ctx)
+}
+
+func waitForShutdownSignal() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	<-sigChan
-	log.Println("Shutting down...")
-
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer shutdownCancel()
-
-	if err := app.Stop(shutdownCtx); err != nil {
-		log.Fatal("Failed to stop application:", err)
-	}
+	log.Println("closing...")
 }

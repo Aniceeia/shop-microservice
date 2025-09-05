@@ -1,6 +1,7 @@
 package postgresql
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -17,25 +18,25 @@ func RunMigrations(pool *pgxpool.Pool) error {
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
-		return errFail("create migration driver: %w", err)
+		return fmt.Errorf("create migration driver: %w", err)
 	}
 
 	migrationsPath, err := findMigrationsPath()
 	if err != nil {
-		return errFail("find migrations: %w", err)
+		return fmt.Errorf("find migrations: %w", err)
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(
-		parseInput("file://%s", filepath.ToSlash(migrationsPath)),
+		fmt.Sprintf("file://%s", filepath.ToSlash(migrationsPath)),
 		"postgres",
 		driver,
 	)
 	if err != nil {
-		return errFail("create migration instance: %w", err)
+		return fmt.Errorf("create migration instance: %w", err)
 	}
 
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		return errFail("run migrations: %w", err)
+		return fmt.Errorf("run migrations: %w", err)
 	}
 	return nil
 }
@@ -53,5 +54,5 @@ func findMigrationsPath() (string, error) {
 		}
 	}
 
-	return "", errFail("migrations directory not found")
+	return "", fmt.Errorf("migrations directory not found")
 }

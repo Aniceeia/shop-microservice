@@ -22,7 +22,6 @@ type OrderUseCase interface {
 	CreateOrder(ctx context.Context, order *model.Order) error
 	GetOrderByID(ctx context.Context, id string) (*model.Order, error)
 	GetAllOrders(ctx context.Context) ([]*model.Order, error)
-	ValidateOrder(order *model.Order) error
 	HealthCheck(ctx context.Context) (map[string]interface{}, error)
 	Shutdown()
 }
@@ -89,7 +88,7 @@ func (uc *orderUseCase) workerLoop(workerNumber int) {
 }
 
 func (uc *orderUseCase) CreateOrder(ctx context.Context, order *model.Order) error {
-	if err := uc.ValidateOrder(order); err != nil {
+	if err := uc.validateOrderFields(order); err != nil {
 		middleware.ValidationErrors.Inc()
 		return err
 	}
@@ -148,7 +147,7 @@ func (uc *orderUseCase) GetAllOrders(ctx context.Context) ([]*model.Order, error
 	return orders, nil
 }
 
-func (uc *orderUseCase) ValidateOrder(order *model.Order) error {
+func (uc *orderUseCase) validateOrderFields(order *model.Order) error {
 	if order.OrderUID == "" {
 		return errors.New("order uid is required")
 	}

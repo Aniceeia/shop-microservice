@@ -7,4 +7,5 @@ import (
 
 type MessageProducer interface {
 	ProduceOrder(ctx context.Context, order *model.Order) error
+	Close() error
 }

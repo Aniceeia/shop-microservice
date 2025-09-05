@@ -2,60 +2,99 @@ package postgresql
 
 import (
 	"context"
+	"fmt"
 
 	"shop-microservice/internal/domain/model"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type OrderRepository struct {
+type DBInterface interface {
+	BeginTx(ctx context.Context, options pgx.TxOptions) (pgx.Tx, error)
+	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error)
+}
+
+// PoolWrapper оборачивает pgxpool.Pool для реализации DBInterface
+type PoolWrapper struct {
 	pool *pgxpool.Pool
 }
 
-func NewOrderRepository(pool *pgxpool.Pool) *OrderRepository {
-	return &OrderRepository{pool: pool}
+func NewPoolWrapper(pool *pgxpool.Pool) *PoolWrapper {
+	return &PoolWrapper{pool: pool}
 }
 
-// Save - saves order, delivery, payment, items
+func (pw *PoolWrapper) BeginTx(ctx context.Context, options pgx.TxOptions) (pgx.Tx, error) {
+	return pw.pool.BeginTx(ctx, options)
+}
+
+func (pw *PoolWrapper) QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row {
+	return pw.pool.QueryRow(ctx, sql, args...)
+}
+
+func (pw *PoolWrapper) Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error) {
+	return pw.pool.Query(ctx, sql, args...)
+}
+
+func (pw *PoolWrapper) Exec(ctx context.Context, sql string, args ...interface{}) (pgconn.CommandTag, error) {
+	return pw.pool.Exec(ctx, sql, args...)
+}
+
+type OrderRepository struct {
+	db DBInterface
+}
+
+func NewOrderRepository(db DBInterface) *OrderRepository {
+	return &OrderRepository{db: db}
+}
+
+// for mocks
+type OrderRepositoryInterface interface {
+	Save(ctx context.Context, order *model.Order) error
+	FindAll(ctx context.Context) ([]*model.Order, error)
+	FindByID(ctx context.Context, uid string) (*model.Order, error)
+}
+
 func (r *OrderRepository) Save(ctx context.Context, order *model.Order) error {
-	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
-		return errFail("failed to begin transaction: %s", err.Error())
+		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
 	if err := r.saveOrder(ctx, tx, order); err != nil {
-		return errFail("%s", err.Error())
+		return err
 	}
 
 	if err := r.saveDelivery(ctx, tx, order); err != nil {
-		return errFail("%s", err.Error())
+		return err
 	}
 
 	if err := r.savePayment(ctx, tx, order); err != nil {
-		return errFail("%s", err.Error())
+		return err
 	}
 
 	if err := r.saveItems(ctx, tx, order); err != nil {
-		return errFail("%s", err.Error())
+		return err
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return errFail("failed to commit transaction: %s", err.Error())
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	return nil
 }
 
-// FindAll - finds all orders
 func (r *OrderRepository) FindAll(ctx context.Context) ([]*model.Order, error) {
 	orders, err := r.getOrdersWithDeliveryAndPayment(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	orderUIDs := extractOrderUIDs(orders)
+	orderUIDs := ExtractOrderUIDs(orders)
 
 	itemsByOrder, err := r.getItemsForOrders(ctx, orderUIDs)
 	if err != nil {
@@ -73,7 +112,6 @@ func (r *OrderRepository) FindAll(ctx context.Context) ([]*model.Order, error) {
 	return result, nil
 }
 
-// FindByID - finds orders by uid
 func (r *OrderRepository) FindByID(ctx context.Context, uid string) (*model.Order, error) {
 	order, err := r.queryOrderWithDeliveryAndPayment(ctx, uid)
 	if err != nil {
@@ -249,7 +287,7 @@ func (r *OrderRepository) queryOrderWithDeliveryAndPayment(ctx context.Context, 
 	var delivery model.Delivery
 	var payment model.Payment
 
-	err := r.pool.QueryRow(ctx, query, uid).Scan(
+	err := r.db.QueryRow(ctx, query, uid).Scan(
 		&order.OrderUID, &order.TrackNumber, &order.Entry, &order.Locale, &order.InternalSignature,
 		&order.CustomerID, &order.DeliveryService, &order.Shardkey, &order.SmID, &order.DateCreated, &order.OofShard,
 		&delivery.Name, &delivery.Phone, &delivery.Zip, &delivery.City, &delivery.Address, &delivery.Region, &delivery.Email,
@@ -259,9 +297,9 @@ func (r *OrderRepository) queryOrderWithDeliveryAndPayment(ctx context.Context, 
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, errFail("order not found: %w", err)
+			return nil, fmt.Errorf("order not found: %w", err)
 		}
-		return nil, errFail("failed to query order: %w", err)
+		return nil, fmt.Errorf("failed to query order: %w", err)
 	}
 
 	order.Delivery = delivery
@@ -276,21 +314,21 @@ func (r *OrderRepository) queryOrderItems(ctx context.Context, uid string) ([]mo
         FROM items WHERE order_uid = $1
     `
 
-	rows, err := r.pool.Query(ctx, query, uid)
+	rows, err := r.db.Query(ctx, query, uid)
 	if err != nil {
-		return nil, errFail("failed to query items: %w", err)
+		return nil, fmt.Errorf("failed to query items: %w", err)
 	}
 	defer rows.Close()
 
 	items, err := pgx.CollectRows(rows, pgx.RowToStructByName[model.Item])
 	if err != nil {
-		return nil, errFail("failed to collect items: %w", err)
+		return nil, fmt.Errorf("failed to collect items: %w", err)
 	}
 
 	return items, nil
 }
 
-func extractOrderUIDs(orders []model.Order) []string {
+func ExtractOrderUIDs(orders []model.Order) []string {
 	uids := make([]string, len(orders))
 	for i, order := range orders {
 		uids[i] = order.OrderUID
@@ -311,9 +349,9 @@ func (r *OrderRepository) getItemsForOrders(ctx context.Context, orderUIDs []str
         ORDER BY order_uid
     `
 
-	rows, err := r.pool.Query(ctx, query, orderUIDs)
+	rows, err := r.db.Query(ctx, query, orderUIDs)
 	if err != nil {
-		return nil, errFail("failed to query items for orders: %w", err)
+		return nil, fmt.Errorf("failed to query items for orders: %w", err)
 	}
 	defer rows.Close()
 
@@ -328,14 +366,14 @@ func (r *OrderRepository) getItemsForOrders(ctx context.Context, orderUIDs []str
 			&item.Sale, &item.Size, &item.TotalPrice, &item.NmID, &item.Brand, &item.Status,
 		)
 		if err != nil {
-			return nil, errFail("failed to scan item: %w", err)
+			return nil, fmt.Errorf("failed to scan item: %w", err)
 		}
 
 		itemsByOrder[orderUID] = append(itemsByOrder[orderUID], item)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errFail("rows iteration error: %w", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
 	return itemsByOrder, nil
@@ -354,9 +392,9 @@ func (r *OrderRepository) getOrdersWithDeliveryAndPayment(ctx context.Context) (
         ORDER BY o.date_created DESC
     `
 
-	rows, err := r.pool.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query)
 	if err != nil {
-		return nil, errFail("failed to query orders: %w", err)
+		return nil, fmt.Errorf("failed to query orders: %w", err)
 	}
 	defer rows.Close()
 
@@ -375,7 +413,7 @@ func (r *OrderRepository) getOrdersWithDeliveryAndPayment(ctx context.Context) (
 		)
 
 		if err != nil {
-			return nil, errFail("failed to scan order: %w", err)
+			return nil, fmt.Errorf("failed to scan order: %w", err)
 		}
 
 		order.Delivery = delivery
@@ -384,7 +422,7 @@ func (r *OrderRepository) getOrdersWithDeliveryAndPayment(ctx context.Context) (
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, errFail("rows iteration error: %w", err)
+		return nil, fmt.Errorf("rows iteration error: %w", err)
 	}
 
 	return orders, nil

@@ -46,7 +46,7 @@ var Module = fx.Options(
 		RunMigrations,
 		PreloadCacheFromDB,
 		StartKafkaConsumer,
-		RegisterHooks,
+		RegisterLifecycleHooks,
 	),
 )
 
@@ -81,36 +81,42 @@ func NewConfig() (*Config, error) {
 	}, nil
 }
 
-func NewDBPool(cfg *Config) (*pgxpool.Pool, error) {
-	connString := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+func getEnv(key, defaultVal string) string {
+	if val := os.Getenv(key); val != "" {
+		return val
+	}
+	return defaultVal
+}
 
-	config, err := pgxpool.ParseConfig(connString)
+func NewDBPool(cfg *Config) (*pgxpool.Pool, error) {
+	connStr := fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
+		cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName,
+	)
+
+	poolCfg, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse connection string: %w", err)
 	}
 
-	config.MaxConns = 50
-	config.MinConns = 5
-	config.MaxConnLifetime = time.Hour
-	config.MaxConnIdleTime = 30 * time.Minute
+	poolCfg.MaxConns = 50
+	poolCfg.MinConns = 5
+	poolCfg.MaxConnLifetime = time.Hour
+	poolCfg.MaxConnIdleTime = 30 * time.Minute
 
 	var pool *pgxpool.Pool
-	// retry
-	for i := range 5 {
-		pool, err = pgxpool.NewWithConfig(context.Background(), config)
-		if err == nil {
-			if err := pool.Ping(context.Background()); err == nil {
-				middleware.DBConnections.Set(1)
-				return pool, nil
-			}
+	for i := 1; i <= 5; i++ {
+		pool, err = pgxpool.NewWithConfig(context.Background(), poolCfg)
+		if err == nil && pool.Ping(context.Background()) == nil {
+			middleware.DBConnections.Set(1)
+			return pool, nil
 		}
-		log.Printf("Attempt %d: failed to connect to database, retrying...", i+1)
+		log.Printf("Attempt %d: failed to connect to DB, retrying...", i)
 		time.Sleep(2 * time.Second)
 	}
 
 	middleware.DBConnections.Set(0)
-	return nil, fmt.Errorf("failed to connect to database after 5 attempts: %w", err)
+	return nil, fmt.Errorf("failed to connect to DB after 5 attempts: %w", err)
 }
 
 func NewKafkaManager(cfg *Config) *kafka.KafkaManager {
@@ -124,8 +130,57 @@ func NewKafkaProducer(cfg *Config) *kafka.Producer {
 	})
 }
 
-func NewKafkaMessageProducer(producer *kafka.Producer) repositories.MessageProducer {
-	return kafka.NewKafkaMessageProducer(producer)
+func NewKafkaMessageProducer(p *kafka.Producer) repositories.MessageProducer {
+	return kafka.NewKafkaMessageProducer(p)
+}
+
+func StartKafkaConsumer(
+	cfg *Config,
+	repo *postgresql.OrderRepository,
+	cache *cachepkg.Cache,
+	km *kafka.KafkaManager,
+	lc fx.Lifecycle,
+) {
+	lc.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			if err := km.TryToConnectKafkaFor(30 * time.Second); err != nil {
+				return fmt.Errorf("kafka not available: %w", err)
+			}
+
+			if err := km.CreateTopicIfNotExists(cfg.KafkaTopic, 3, 1); err != nil {
+				log.Printf("Warning: failed to create topic: %v", err)
+			}
+
+			go func() {
+				consumer := kafka.NewConsumer(cfg.KafkaBrokers, cfg.KafkaTopic, cfg.KafkaGroupID)
+				defer consumer.Close()
+
+				handler := func(key string, value []byte) error {
+					var order model.Order
+					if err := json.Unmarshal(value, &order); err != nil {
+						log.Printf("Failed to unmarshal order: %v", err)
+						return err
+					}
+
+					ctx := context.Background()
+					if err := repo.Save(ctx, &order); err != nil {
+						log.Printf("Failed to save order to DB: %v", err)
+						return err
+					}
+
+					cache.Set(order.OrderUID, &order)
+					log.Printf("Order %s processed from Kafka", order.OrderUID)
+					return nil
+				}
+
+				if err := consumer.Consume(context.Background(), handler); err != nil {
+					log.Printf("Kafka consumer error: %v", err)
+				}
+			}()
+
+			return nil
+		},
+	})
 }
 
 func NewOrderRepository(pool *pgxpool.Pool) *postgresql.OrderRepository {
@@ -133,7 +188,7 @@ func NewOrderRepository(pool *pgxpool.Pool) *postgresql.OrderRepository {
 }
 
 func NewCache() *cachepkg.Cache {
-	return cachepkg.NewCash(1000, 30*time.Minute)
+	return cachepkg.NewCache(1000, 30*time.Minute)
 }
 
 func NewCacheAdapter(cache *cachepkg.Cache) repositories.Cache {
@@ -146,22 +201,15 @@ func NewMetrics() *metrics.Metrics {
 
 func NewOrderUseCase(
 	repo *postgresql.OrderRepository,
-	messageProducer repositories.MessageProducer,
+	producer repositories.MessageProducer,
 	cache repositories.Cache,
 	metrics repositories.Metrics,
 ) usecases.OrderUseCase {
-	return usecases.NewOrderUseCase(
-		repo,
-		messageProducer,
-		cache,
-		metrics,
-		3,
-		1000,
-	)
+	return usecases.NewOrderUseCase(repo, producer, cache, metrics, 3, 1000)
 }
 
-func NewHandler(useCase usecases.OrderUseCase) *handlers.Handler {
-	return handlers.NewHandler(useCase)
+func NewHandler(uc usecases.OrderUseCase) *handlers.Handler {
+	return handlers.NewHandler(uc)
 }
 
 func NewRouter(handler *handlers.Handler) *gin.Engine {
@@ -202,68 +250,7 @@ func PreloadCacheFromDB(cache repositories.Cache, repo *postgresql.OrderReposito
 	})
 }
 
-func StartKafkaConsumer(
-	cfg *Config,
-	repo *postgresql.OrderRepository,
-	cache *cachepkg.Cache,
-	km *kafka.KafkaManager,
-	lc fx.Lifecycle,
-) {
-	lc.Append(fx.Hook{
-		OnStart: func(ctx context.Context) error {
-			//retry
-			if err := km.TryToConnectKafkaFor(30 * time.Second); err != nil {
-				return fmt.Errorf("kafka not available: %w", err)
-			}
-
-			if err := km.CreateTopicIfNotExists(cfg.KafkaTopic, 3, 1); err != nil {
-				log.Printf("Warning: failed to create topic: %v", err)
-			}
-
-			go func() {
-				consumer := kafka.NewConsumer(kafka.ConsumerConfig{
-					Brokers:     cfg.KafkaBrokers,
-					Topic:       cfg.KafkaTopic,
-					GroupID:     cfg.KafkaGroupID,
-					StartOffset: kafka.FirstOffset,
-				})
-				defer consumer.Close()
-
-				handler := func(key string, value []byte) error {
-					var order model.Order
-					if err := json.Unmarshal(value, &order); err != nil {
-						log.Printf("Failed to unmarshal order: %v", err)
-						return err
-					}
-
-					ctx := context.Background()
-					if err := repo.Save(ctx, &order); err != nil {
-						log.Printf("Failed to save order to DB: %v", err)
-						return err
-					}
-
-					cache.Set(order.OrderUID, &order)
-					log.Printf("Order %s processed from Kafka", order.OrderUID)
-					return nil
-				}
-
-				if err := consumer.Consume(context.Background(), handler); err != nil {
-					log.Printf("Kafka consumer error: %v", err)
-				}
-			}()
-
-			return nil
-		},
-	})
-}
-
-func RegisterHooks(
-	server *http.Server,
-	pool *pgxpool.Pool,
-	producer *kafka.Producer,
-	handler *handlers.Handler,
-	lc fx.Lifecycle,
-) {
+func RegisterLifecycleHooks(server *http.Server, pool *pgxpool.Pool, producer *kafka.Producer, handler *handlers.Handler, lc fx.Lifecycle) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
@@ -281,12 +268,4 @@ func RegisterHooks(
 			return server.Shutdown(ctx)
 		},
 	})
-}
-
-func getEnv(key, defaultValue string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return defaultValue
-	}
-	return value
 }

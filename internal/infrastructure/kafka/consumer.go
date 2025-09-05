@@ -3,80 +3,157 @@ package kafka
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
+	"sync"
 	"time"
 
-	"github.com/segmentio/kafka-go"
+	kafkaGo "github.com/segmentio/kafka-go"
 )
 
-const (
-	FirstOffset int64 = -2
-	LastOffset  int64 = -1
-)
+// ReaderInterface — интерфейс для чтения сообщений
+type ReaderInterface interface {
+	ReadMessage(ctx context.Context) (kafkaGo.Message, error)
+	Close() error
+}
 
+// MessageHandler — функция обработки сообщений
+type MessageHandler func(key string, value []byte) error
+
+// Consumer — основной консьюмер
 type Consumer struct {
-	reader *kafka.Reader
+	Reader ReaderInterface
 	topic  string
 }
 
-type ConsumerConfig struct {
-	Brokers     []string
-	Topic       string
-	GroupID     string
-	StartOffset int64
+// messageBuffer для хранения чанков
+type messageBuffer struct {
+	mu        sync.Mutex
+	chunks    [][]byte
+	count     int
+	createdAt time.Time
 }
 
-type MessageHandler func(key string, value []byte) error
-
-func NewConsumer(cfg ConsumerConfig) *Consumer {
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:        cfg.Brokers,
-		Topic:          cfg.Topic,
-		GroupID:        cfg.GroupID,
-		MinBytes:       10e3, // 10KB
-		MaxBytes:       10e6, // 10MB
-		CommitInterval: time.Second,
-		StartOffset:    cfg.StartOffset,
-		Logger:         kafka.LoggerFunc(log.Printf),
-		ErrorLogger:    kafka.LoggerFunc(log.Printf),
+// NewConsumer создаёт Consumer с реальным kafka.Reader
+func NewConsumer(brokers []string, topic, groupID string) *Consumer {
+	reader := kafkaGo.NewReader(kafkaGo.ReaderConfig{
+		Brokers:  brokers,
+		Topic:    topic,
+		GroupID:  groupID,
+		MinBytes: 10e3,
+		MaxBytes: 200e6,
 	})
-
-	return &Consumer{
-		reader: reader,
-		topic:  cfg.Topic,
-	}
+	return &Consumer{Reader: reader, topic: topic}
 }
 
+// Consume — цикл чтения сообщений
 func (c *Consumer) Consume(ctx context.Context, handler MessageHandler) error {
+	buffer := make(map[string]*messageBuffer)
+	var bufferMu sync.Mutex
+
+	// Горутина для очистки старых буферов
+	go c.cleanupOldBuffers(ctx, &bufferMu, buffer)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			msg, err := c.reader.ReadMessage(ctx)
+			kafkaMsg, err := c.Reader.ReadMessage(ctx)
 			if err != nil {
-				return errFail("failed to read message: %w", err)
+				if err == context.Canceled {
+					return nil
+				}
+				return fmt.Errorf("read message failed: %w", err)
 			}
 
-			if err := handler(string(msg.Key), msg.Value); err != nil {
-				errFail("Error handling message: %v", err)
-				continue
+			if err := c.processMessage(kafkaMsg, handler, &bufferMu, buffer); err != nil {
+				log.Printf("process message failed: %v", err)
 			}
-
-			kafkaLog("Consumed message: topic=%s key=%s", c.topic, string(msg.Key))
 		}
 	}
 }
 
-func (c *Consumer) ConsumeJSON(ctx context.Context, handler func(key string, value interface{}) error, target interface{}) error {
-	return c.Consume(ctx, func(key string, value []byte) error {
-		if err := json.Unmarshal(value, target); err != nil {
-			return errFail("failed to unmarshal JSON: %w", err)
+// processMessage обрабатывает одно сообщение
+func (c *Consumer) processMessage(
+	kafkaMsg kafkaGo.Message,
+	handler MessageHandler,
+	bufferMu *sync.Mutex,
+	buffer map[string]*messageBuffer,
+) error {
+	// Пытаемся разобрать как ChunkedMessage
+	var chunk ChunkedMessage
+	if err := json.Unmarshal(kafkaMsg.Value, &chunk); err != nil {
+		// Если не JSON, обрабатываем как обычное сообщение
+		return handler(string(kafkaMsg.Key), kafkaMsg.Value)
+	}
+
+	// Если это не чанкованное сообщение
+	if chunk.ChunkCount <= 1 {
+		return handler(chunk.Key, chunk.Value)
+	}
+
+	// Обработка чанкованного сообщения
+	bufferMu.Lock()
+	if _, exists := buffer[chunk.Key]; !exists {
+		buffer[chunk.Key] = &messageBuffer{
+			chunks:    make([][]byte, chunk.ChunkCount),
+			count:     chunk.ChunkCount,
+			createdAt: time.Now(),
 		}
-		return handler(key, target)
-	})
+	}
+	buf := buffer[chunk.Key]
+	bufferMu.Unlock()
+
+	buf.mu.Lock()
+	defer buf.mu.Unlock()
+
+	// Сохраняем чанк
+	if chunk.ChunkIndex < len(buf.chunks) {
+		buf.chunks[chunk.ChunkIndex] = chunk.Value
+	}
+
+	// Проверяем, все ли чанки получены
+	if AllChunksReceived(buf.chunks) {
+		fullMessage := MergeChunks(buf.chunks)
+
+		bufferMu.Lock()
+		delete(buffer, chunk.Key)
+		bufferMu.Unlock()
+
+		return handler(chunk.Key, fullMessage)
+	}
+
+	return nil
 }
 
+// cleanupOldBuffers очищает старые буферы
+func (c *Consumer) cleanupOldBuffers(ctx context.Context, bufferMu *sync.Mutex, buffer map[string]*messageBuffer) {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			bufferMu.Lock()
+			for key, buf := range buffer {
+				if time.Since(buf.createdAt) > 5*time.Minute {
+					delete(buffer, key)
+				}
+			}
+			bufferMu.Unlock()
+		}
+	}
+}
+
+// Close закрывает reader
 func (c *Consumer) Close() error {
-	return c.reader.Close()
+	return c.Reader.Close()
+}
+
+// Topic возвращает топик консьюмера
+func (c *Consumer) Topic() string {
+	return c.topic
 }

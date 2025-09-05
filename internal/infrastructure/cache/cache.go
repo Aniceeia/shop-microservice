@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"log"
 	"shop-microservice/internal/api/middleware"
 	"shop-microservice/internal/domain/model"
 	"shop-microservice/internal/domain/repositories"
@@ -9,6 +10,7 @@ import (
 	"time"
 )
 
+// Cache хранит заказы в памяти с TTL и ограничением по размеру
 type Cache struct {
 	mu       sync.RWMutex
 	orders   map[string]*cacheEntry
@@ -29,7 +31,8 @@ type cacheStats struct {
 	accessCount int
 }
 
-func NewCash(maxSize int, ttl time.Duration) *Cache {
+// NewCache создает новый кэш
+func NewCache(maxSize int, ttl time.Duration) *Cache {
 	c := &Cache{
 		orders:   make(map[string]*cacheEntry),
 		stats:    make(map[string]cacheStats),
@@ -42,63 +45,47 @@ func NewCash(maxSize int, ttl time.Duration) *Cache {
 	return c
 }
 
+// Set сохраняет заказ в кэш
 func (c *Cache) Set(uid string, order *model.Order) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.ensureCapacity()
 
-	if len(c.orders) >= c.maxSize {
-		c.evictOldest()
-	}
-
-	c.orders[uid] = &cacheEntry{
-		order:     order,
-		expiresAt: time.Now().Add(c.ttl),
-	}
-	c.stats[uid] = cacheStats{
-		lastAccess:  time.Now(),
-		accessCount: 0,
-	}
-	middleware.QueueSize.Set(float64(len(c.orders)))
+	c.setEntry(uid, order)
 }
 
+// Get возвращает заказ из кэша
 func (c *Cache) Get(uid string) (*model.Order, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	entry, exists := c.orders[uid]
-	if !exists {
+	if !exists || time.Now().After(entry.expiresAt) {
 		middleware.CacheMisses.Inc()
 		return nil, false
 	}
 
-	if time.Now().After(entry.expiresAt) {
-		middleware.CacheMisses.Inc()
-		return nil, false
-	}
-
-	stats := c.stats[uid]
-	stats.lastAccess = time.Now()
-	stats.accessCount++
-	c.stats[uid] = stats
-
+	c.updateStats(uid)
 	middleware.CacheHits.Inc()
 	return entry.order, true
 }
 
+// GetAll возвращает все актуальные заказы
 func (c *Cache) GetAll() []*model.Order {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	orders := make([]*model.Order, 0, len(c.orders))
 	now := time.Now()
+	result := make([]*model.Order, 0, len(c.orders))
 	for _, entry := range c.orders {
 		if now.Before(entry.expiresAt) {
-			orders = append(orders, entry.order)
+			result = append(result, entry.order)
 		}
 	}
-	return orders
+	return result
 }
 
+// Delete удаляет заказ из кэша
 func (c *Cache) Delete(uid string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -106,12 +93,14 @@ func (c *Cache) Delete(uid string) {
 	delete(c.stats, uid)
 }
 
+// Size возвращает количество заказов в кэше
 func (c *Cache) Size() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return len(c.orders)
 }
 
+// Clear очищает кэш
 func (c *Cache) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -119,9 +108,8 @@ func (c *Cache) Clear() {
 	c.stats = make(map[string]cacheStats)
 }
 
+// PreloadCacheFromDB загружает все заказы из БД
 func (c *Cache) PreloadCacheFromDB(repo repositories.OrderRepository) error {
-	start := time.Now()
-
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -134,19 +122,52 @@ func (c *Cache) PreloadCacheFromDB(repo repositories.OrderRepository) error {
 	defer c.mu.Unlock()
 
 	c.orders = make(map[string]*cacheEntry)
-	now := time.Now()
-
 	for _, order := range orders {
 		if order != nil {
-			c.orders[order.OrderUID] = &cacheEntry{
-				order:     order,
-				expiresAt: now.Add(c.ttl),
-			}
+			c.setEntry(order.OrderUID, order)
 		}
 	}
 
-	cacheLog("Loaded %d orders in %v", len(orders), time.Since(start))
+	log.Printf("Loaded %d orders into cache", len(orders))
 	return nil
+}
+
+// Stop останавливает тикер очистки
+func (c *Cache) Stop() {
+	close(c.stopChan)
+}
+
+// CleanupTickerForTest тикер только для тестов
+func (c *Cache) CleanupTickerForTest(d time.Duration) {
+	c.cleanup.Stop()
+	c.cleanup = time.NewTicker(d)
+	go c.cleanupExpired()
+}
+
+func (c *Cache) setEntry(uid string, order *model.Order) {
+	c.orders[uid] = &cacheEntry{
+		order:     order,
+		expiresAt: time.Now().Add(c.ttl),
+	}
+	c.stats[uid] = cacheStats{
+		lastAccess:  time.Now(),
+		accessCount: 0,
+	}
+	middleware.QueueSize.Set(float64(len(c.orders)))
+}
+
+func (c *Cache) updateStats(uid string) {
+	stats := c.stats[uid]
+	stats.lastAccess = time.Now()
+	stats.accessCount++
+	c.stats[uid] = stats
+}
+
+func (c *Cache) ensureCapacity() {
+	if len(c.orders) < c.maxSize {
+		return
+	}
+	c.evictOldest()
 }
 
 func (c *Cache) evictOldest() {
@@ -184,8 +205,4 @@ func (c *Cache) cleanupExpired() {
 			return
 		}
 	}
-}
-
-func (c *Cache) Stop() {
-	close(c.stopChan)
 }

@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed Sep  3 20:08:44 2025
+# Make data base, printed on Thu Sep  4 15:07:39 2025
 
 # Variables
 
@@ -57,7 +57,7 @@ VSCODE_CODE_CACHE_PATH = /home/nastya/.config/Code/CachedData/2901c5ac6db8a986a5
 # environment
 LANG = C
 # environment
-XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.D3CKC3
+XAUTHORITY = /run/user/1000/.mutter-Xwaylandauth.VLMLC3
 # default
 .LOADED := 
 # default
@@ -93,13 +93,13 @@ MAKEFILE_LIST := Makefile
 # automatic
 @F = $(notdir $@)
 # environment
-VSCODE_PID = 2315
+VSCODE_PID = 2289
 # environment
 XDG_SESSION_TYPE = wayland
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # environment
-SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2043,unix/daliatoo:/tmp/.ICE-unix/2043
+SESSION_MANAGER = local/daliatoo:@/tmp/.ICE-unix/2016,unix/daliatoo:/tmp/.ICE-unix/2016
 # automatic
 *F = $(notdir $*)
 # environment
@@ -145,9 +145,9 @@ LC_MONETARY = en_CA.UTF-8
 # environment
 LC_TIME = en_CA.UTF-8
 # environment
-GOTELEMETRY_GOPLS_CLIENT_START_TIME = 1741773601
+APPLICATION_INSIGHTS_NO_STATSBEAT = true
 # environment
-INVOCATION_ID = 9f76bc565cb44a68bca7779e706a43cd
+INVOCATION_ID = 4babe3358f3143d7bd73f0214928b92d
 # environment
 USERNAME = nastya
 # environment
@@ -159,7 +159,7 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # automatic
 ?F = $(notdir $?)
 # environment
-DESKTOP_AUTOSTART_ID = 1059b667b3be320b3717569193135535900000020430016
+DESKTOP_AUTOSTART_ID = 10bb786345f59b5b6c175698764593836100000020160016
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # automatic
@@ -173,13 +173,11 @@ GNUMAKEFLAGS :=
 # environment
 LOGNAME = nastya
 # environment
-GOTELEMETRY_GOPLS_CLIENT_TOKEN = 792
-# environment
 GIO_LAUNCHED_DESKTOP_FILE = /home/nastya/.config/autostart/code.desktop
 # makefile
 .DEFAULT_GOAL := generate-test-data
 # environment
-SYSTEMD_EXEC_PID = 2043
+SYSTEMD_EXEC_PID = 2016
 # makefile (from 'Makefile', line 3)
 PACKAGES := shop-microservice/cmd shop-microservice/internal/api shop-microservice/internal/api/handlers shop-microservice/internal/api/middleware shop-microservice/internal/application/usecases shop-microservice/internal/domain/model shop-microservice/internal/domain/repositories shop-microservice/internal/infrastructure/cache shop-microservice/internal/infrastructure/metrics
 # environment
@@ -193,11 +191,11 @@ MAKE_VERSION := 4.3
 # 'override' directive
 .SHELLSTATUS := 0
 # environment
-MANAGERPID = 1891
+MANAGERPID = 1862
 # environment
 LC_MEASUREMENT = en_CA.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 2315
+GIO_LAUNCHED_DESKTOP_FILE_PID = 2289
 # environment
 _ = /usr/share/code/code
 # environment
@@ -205,9 +203,7 @@ LC_PAPER = en_CA.UTF-8
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
-JOURNAL_STREAM = 8:17631
-# environment
-GOMODCACHE = /home/nastya/goproject/pkg/mod
+JOURNAL_STREAM = 8:16610
 # environment
 XDG_SESSION_CLASS = user
 # environment
@@ -222,8 +218,6 @@ VSCODE_IPC_HOOK = /run/user/1000/vscode-59bea211-1.10-main.sock
 IM_CONFIG_PHASE = 1
 # environment
 PAPERSIZE = letter
-# environment
-GOPROXY = https://proxy.golang.org,direct
 # default
 .RECIPEPREFIX := 
 # automatic
@@ -241,7 +235,7 @@ GDMSESSION = ubuntu
 # environment
 LC_IDENTIFICATION = en_CA.UTF-8
 # variable set hash-table stats:
-# Load=114/1024=11%, Rehash=0, Collisions=7/147=5%
+# Load=111/1024=11%, Rehash=0, Collisions=5/144=3%
 
 # Pattern-specific Variable Values
 
@@ -273,7 +267,7 @@ test-coverage:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2025-09-03 01:44:11.071938043
+#  Last modified 2025-09-04 04:49:56.207880402
 #  File has been updated.
 #  Successfully updated.
 
@@ -289,18 +283,19 @@ up:
 #  Modification time never checked.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 24):
-	docker-compose -f docker/docker-compose.yml up --build
+	docker-compose -f docker/docker-compose.yml up --build --quiet-pull
 
 clean:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 33):
-	rm -rf coverage.html *.out
+	rm -rf coverage.html *.out tests/fixtures
 
 test-unit:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
+ 
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 10):
@@ -367,6 +362,6 @@ down:
 # strcache performance: lookups = 53 / hit rate = 41%
 # hash-table stats:
 # Load=31/8192=0%, Rehash=0, Collisions=0/53=0%
-# Finished Make data base on Wed Sep  3 20:08:44 2025
+# Finished Make data base on Thu Sep  4 15:07:39 2025
 
  
