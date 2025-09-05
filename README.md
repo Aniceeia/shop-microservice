@@ -7,6 +7,7 @@
 ## Быстрый старт
 
 ```bash
+
 # Запуск сервисов
 make up
 
@@ -53,7 +54,8 @@ KAFKA_MAX=10485760
 - Дашборды Grafana на порту 3000
 
 ## Архитектура 
-```
+
+```mermaid
 graph TB
     %% External Components
     KAFKA[Kafka Broker]
