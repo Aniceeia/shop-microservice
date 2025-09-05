@@ -31,7 +31,6 @@ services:
   prometheus:   # Мониторинг метрик
   grafana:      # Визуализация метрик
 ```
-![Пример отчета prometheus при нагрузочном тестировании](<misc/Screenshot from 2025-09-04 03-17-48.png>)
 ## Переменные окружения
 
 Создайте файл `.env` на основе `.env.example`:
@@ -188,7 +187,7 @@ make test
 
 ## Нагрузочное тестирование
 
-![](<misc/Screenshot from 2025-09-04 03-19-13.png>)
+<table> <tr> <td width="50%"> <img src="misc/Screenshot from 2025-09-04 03-19-13.png" alt="Нагрузочное тестирование"> <br><center><em>Результаты нагрузочного тестирования</em></center> </td> <td width="50%"> <img src="misc/Screenshot from 2025-09-04 03-17-48.png" alt="Prometheus метрики"> <br><center><em>Метрики Prometheus при нагрузке</em></center> </td> </tr> </table>
 
 Нагрузочное тестирование реализовано через команду `make test-load`, которая:
 
